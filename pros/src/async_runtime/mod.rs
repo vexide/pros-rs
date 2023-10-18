@@ -2,15 +2,15 @@ use core::{cell::RefCell, future::Future};
 
 use alloc::rc::Rc;
 
-pub(crate) mod executor;
-pub(crate) mod reactor;
+pub mod executor;
+pub mod reactor;
 
 pub struct JoinHandle<T> {
     output: Rc<RefCell<Option<T>>>,
 }
 impl<T> JoinHandle<T> {
     /// Blocks the current task untill a return value can be extracted from your future.
-    /// Does not poll all futures to completion. 
+    /// Does not poll all futures to completion.
     /// If you want to complete all futures, use the [`complete`] function.
     pub fn join(self) -> T {
         loop {
@@ -38,7 +38,7 @@ pub fn spawn<T>(future: impl Future<Output = T> + Send + 'static) -> JoinHandle<
 }
 
 /// Blocks the current task untill a return value can be extracted from the provided future.
-/// Does not poll all futures to completion. 
+/// Does not poll all futures to completion.
 /// If you want to complete all futures, use the [`complete`] function.
 pub fn block_on<F: Future + 'static>(future: F) -> F::Output {
     executor::EXECUTOR.with(|e| e.block_on(future))

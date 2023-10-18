@@ -30,17 +30,16 @@ impl Task {
 
                 async move {
                     let future_output = future.await;
-                    *core::cell::RefCell::<_>::borrow_mut(&output) =
-                        Some(future_output);
+                    *core::cell::RefCell::<_>::borrow_mut(&output) = Some(future_output);
                 }
             }),
         }
     }
 }
 
-pub(crate) struct Executor {
+pub struct Executor {
     queue: RefCell<VecDeque<Task>>,
-    pub(crate) reactor: Reactor,
+    pub reactor: Reactor,
 }
 impl Executor {
     pub fn new() -> Self {
@@ -56,12 +55,10 @@ impl Executor {
             .borrow_mut()
             .push_back(Task::wrap(future, output.clone()));
 
-        JoinHandle {
-            output,
-        }
+        JoinHandle { output }
     }
 
-    pub(crate) fn tick(&self) -> bool {
+    pub(crate) fn tick(self: &Rc<Self>) -> bool {
         self.reactor.tick();
 
         let mut task = match self.queue.borrow_mut().pop_front() {
@@ -71,6 +68,7 @@ impl Executor {
 
         let task_waker = alloc::sync::Arc::new(TaskWaker {
             task: RefCell::new(None),
+            executor: self.clone(),
         });
         let waker = Waker::from(task_waker.clone());
 
@@ -82,7 +80,7 @@ impl Executor {
         true
     }
 
-    pub fn block_on<F: Future + 'static>(&self, future: F) -> F::Output {
+    pub fn block_on<F: Future + 'static>(self: &Rc<Self>, future: F) -> F::Output {
         let output = Rc::new(RefCell::new(None));
 
         self.queue
@@ -98,13 +96,14 @@ impl Executor {
         }
     }
 
-    pub fn complete(&self) {
+    pub fn complete(self: &Rc<Self>) {
         while self.tick() {}
     }
 }
 
 pub struct TaskWaker {
     task: RefCell<Option<Task>>,
+    executor: Rc<Executor>,
 }
 // These are here to apease the waker struct.
 // The executor is single threaded and this waker will never be passed around threads or shared between threads.
@@ -114,7 +113,7 @@ unsafe impl Sync for TaskWaker {}
 impl Wake for TaskWaker {
     fn wake(self: alloc::sync::Arc<Self>) {
         if let Some(task) = self.task.borrow_mut().take() {
-            EXECUTOR.with(|e| e.queue.borrow_mut().push_back(task))
+            self.executor.queue.borrow_mut().push_back(task)
         }
     }
 }

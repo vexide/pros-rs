@@ -1,3 +1,4 @@
+use crate::println;
 use core::{cell::RefCell, cmp::Reverse, task::Waker};
 
 use alloc::vec::Vec;
@@ -8,9 +9,13 @@ pub struct Sleepers {
 
 impl Sleepers {
     pub fn push(&mut self, waker: Waker, target: u32) {
+        println!("adding sleeper");
         self.sleepers.push((waker, target));
 
         self.sleepers.sort_by_key(|(_, target)| Reverse(*target));
+        let mut sleepstr = format!("sleepers: {:?}", self.sleepers);
+        sleepstr.truncate(50);
+        println!("{sleepstr}");
     }
 
     pub fn pop(&mut self) -> Option<Waker> {
@@ -19,7 +24,7 @@ impl Sleepers {
 }
 
 pub struct Reactor {
-    pub(crate) sleepers: RefCell<Sleepers>,
+    pub sleepers: RefCell<Sleepers>,
 }
 
 impl Reactor {
