@@ -19,6 +19,10 @@ snafu = { version = "0.7.5", default-features = false, features = [
     "rust_1_61",
 ] }
 no_std_io = { version = "0.6.0", features = ["alloc"] }
+tracing = { version = "0.1.40", default-features = false }
+tracing-subscriber = { version = "0.3.18", default-features = false, features = ["alloc"] }
+log = "0.4.20"
+chrono = { version = "0.4.31", default-features = false }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 dlmalloc = { version = "0.2.4", features = ["global"] }
