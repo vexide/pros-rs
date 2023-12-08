@@ -3,6 +3,7 @@
 
 use core::time::Duration;
 use pros::prelude::*;
+use pros_sys::delay;
 
 #[derive(Debug, Default)]
 struct ExampleRobot;
@@ -11,7 +12,11 @@ impl Robot for ExampleRobot {
         pros::logger::ProsLogger::init().unwrap();
 
         let str = "PROS";
-        info!("Hello, {str}!");
+        loop {
+            info!("Hello, {str}!");
+
+            sleep(Duration::from_millis(1000));
+        }
 
         Ok(())
     }

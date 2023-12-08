@@ -39,8 +39,8 @@ impl Log for ProsLogger {
         let message = format!(
             "{}m{}s{}ms [{}] {}: {}",
             now.num_minutes(),
-            now.num_seconds(),
-            now.num_milliseconds(),
+            now.num_seconds() % 60,
+            now.num_milliseconds() % 1000,
             record.level(),
             target,
             record.args()
