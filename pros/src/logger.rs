@@ -1,6 +1,6 @@
 use core::time::Duration;
 
-use alloc::{format, string::ToString, ffi::CString};
+use alloc::{ffi::CString, format, string::ToString};
 
 use log::{Log, Metadata, Record};
 
@@ -38,7 +38,7 @@ impl Log for ProsLogger {
             chrono::Duration::from_std(Duration::from_millis(unsafe { pros_sys::millis() as _ }))
                 .unwrap();
 
-        let message = format!("{}{} [{}] {}", now, level_string, target, record.args());
+        let message = format!("{} {} [{}] {}", format!("{}m {}s {}ms", now.num_minutes(), now.num_seconds(), now.num_milliseconds()), level_string, target, record.args());
 
         println!("{}", message);
         // Print to the debug teminal
