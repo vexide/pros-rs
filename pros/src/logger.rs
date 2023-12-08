@@ -1,6 +1,6 @@
 use core::time::Duration;
 
-use alloc::{format, string::ToString};
+use alloc::{format, string::ToString, ffi::CString};
 
 use log::{Log, Metadata, Record};
 
@@ -41,9 +41,10 @@ impl Log for ProsLogger {
         let message = format!("{}{} [{}] {}", now, level_string, target, record.args());
 
         println!("{}", message);
-        // Print to the debug 
+        // Print to the debug teminal
+        let c_output = CString::new(message).unwrap();
         unsafe {
-            pros_sys::puts(message.as_ptr() as _);
+            pros_sys::puts(c_output.as_ptr() as _);
         }
     }
 
