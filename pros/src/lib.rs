@@ -22,7 +22,7 @@ pub mod lcd;
 pub mod adi;
 pub mod link;
 pub mod lvgl;
-mod tracing;
+pub mod logger;
 
 pub type Result<T = ()> = core::result::Result<T, alloc::boxed::Box<dyn core::error::Error>>;
 
@@ -176,4 +176,6 @@ pub mod prelude {
     pub use crate::sensors::rotation::*;
     pub use crate::sensors::vision::*;
     pub use crate::task::{sleep, spawn};
+
+    pub use log::{debug, error, info, log, trace, warn};
 }

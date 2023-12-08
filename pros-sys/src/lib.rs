@@ -50,4 +50,6 @@ extern "C" {
     pub fn free(ptr: *mut core::ffi::c_void);
     pub fn __errno() -> *mut i32;
     pub fn clock() -> i32;
+    pub fn printf(__format: *const core::ffi::c_char,...) -> core::ffi::c_int;
+    pub fn puts(__s: *const core::ffi::c_char) -> core::ffi::c_int;
 }
