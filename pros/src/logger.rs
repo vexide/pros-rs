@@ -1,6 +1,6 @@
 use core::time::Duration;
 
-use alloc::{ffi::CString, format, string::ToString};
+use alloc::{ffi::CString, format};
 
 use log::{Log, Metadata, Record};
 
@@ -26,8 +26,6 @@ impl Log for ProsLogger {
     }
 
     fn log(&self, record: &Record) {
-        let level_string = format!("{:<5}", record.level().to_string());
-
         let target = if !record.target().is_empty() {
             record.target()
         } else {
@@ -38,7 +36,15 @@ impl Log for ProsLogger {
             chrono::Duration::from_std(Duration::from_millis(unsafe { pros_sys::millis() as _ }))
                 .unwrap();
 
-        let message = format!("{} {} [{}] {}", format!("{}m {}s {}ms", now.num_minutes(), now.num_seconds(), now.num_milliseconds()), level_string, target, record.args());
+        let message = format!(
+            "{}m{}s{}ms [{}] {}: {}",
+            now.num_minutes(),
+            now.num_seconds(),
+            now.num_milliseconds(),
+            record.level(),
+            target,
+            record.args()
+        );
 
         println!("{}", message);
         // Print to the debug teminal
