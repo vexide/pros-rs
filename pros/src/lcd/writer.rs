@@ -4,6 +4,23 @@ use alloc::ffi::CString;
 use alloc::string::String;
 
 const V5_SCREEN_HEIGHT: usize = 8;
+// TODO: Check this
+const V5_SCREEN_WIDTH: usize = 40;
+
+fn word_wrap(text: &str) -> String {
+    let mut length_left = V5_SCREEN_WIDTH;
+    let mut result = String::new();
+    for word in text.split(" ") {
+        if word.len() + 1 > length_left {
+            result.push('\n');
+            length_left = V5_SCREEN_WIDTH - word.len();
+        }
+        length_left -= word.len() + 1;
+        result.push_str(word);
+        result.push(' ');
+    }
+    result
+}
 
 pub(crate) struct ConsoleLcd {
     lines: [CString; V5_SCREEN_HEIGHT],
@@ -28,6 +45,9 @@ impl ConsoleLcd {
 impl core::fmt::Write for ConsoleLcd {
     fn write_str(&mut self, text: &str) -> core::fmt::Result {
         let mut should_render = false;
+        
+        let text = word_wrap(text);
+
         for c in text.chars() {
             if c == '\n' {
                 should_render = true;

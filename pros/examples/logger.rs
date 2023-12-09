@@ -13,7 +13,7 @@ impl Robot for ExampleRobot {
 
         let str = "PROS";
         loop {
-            info!("Hello, {str}!");
+            info!("Hello, {str}!, this should be line wrapped somewhere in here");
 
             sleep(Duration::from_millis(1000));
         }
