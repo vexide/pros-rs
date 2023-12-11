@@ -26,23 +26,27 @@ impl Log for ProsLogger {
     }
 
     fn log(&self, record: &Record) {
-        let target = if !record.target().is_empty() {
-            record.target()
-        } else {
-            record.module_path().unwrap_or_default()
-        };
-
         let now =
             chrono::Duration::from_std(Duration::from_millis(unsafe { pros_sys::millis() as _ }))
                 .unwrap();
 
+        let time = if now.num_minutes() > 0 {
+            format!("{}m{}s", now.num_minutes(), now.num_seconds() % 60)
+        } else {
+            format!("{}s", now.num_seconds())
+        };
+
+        let level = match record.level() {
+            log::Level::Error => "E",
+            log::Level::Warn => "W",
+            log::Level::Info => "I",
+            log::Level::Debug => "D",
+            log::Level::Trace => "T",
+        };
+
         let message = format!(
-            "{}m{}s{}ms [{}] {}: {}",
-            now.num_minutes(),
-            now.num_seconds() % 60,
-            now.num_milliseconds() % 1000,
-            record.level(),
-            target,
+            "{time} {}: {}",
+            level,
             record.args()
         );
 
