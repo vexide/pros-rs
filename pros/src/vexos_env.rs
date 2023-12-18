@@ -1,3 +1,5 @@
+use alloc::format;
+
 use crate::println;
 use core::{
     alloc::{GlobalAlloc, Layout},
@@ -7,6 +9,10 @@ use core::{
 #[panic_handler]
 pub fn panic(_info: &PanicInfo) -> ! {
     println!("Panicked! {_info}");
+    let panic_message = alloc::ffi::CString::new(format!("Panicked! {}", _info)).unwrap();
+    unsafe {
+        pros_sys::puts(panic_message.as_ptr());
+    }
     let panicking_task = crate::task::current();
     // Make sure we eat up every cycle to stop execution
     panicking_task.set_priority(crate::task::TaskPriority::High);
