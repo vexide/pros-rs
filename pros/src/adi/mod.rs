@@ -33,6 +33,9 @@ pub enum AdiError {
     #[snafu(display("The port specified cannot be configured due to an invalid configuration type."))]
     InvalidConfigType,
 
+    #[snafu(display("The port has already been configured."))]
+    AlreadyConfigured,
+    
     #[snafu(display("{source}"), context(false))]
     Port { source: PortError },
 }

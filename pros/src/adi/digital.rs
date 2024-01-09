@@ -3,65 +3,63 @@ use core::ops::{Deref, DerefMut};
 
 use crate::error::bail_on;
 
-use pros_sys::{PROS_ERR, E_ADI_DIGITAL_IN, E_ADI_DIGITAL_OUT };
+use pros_sys::PROS_ERR;
 
-use crate::adi::{AdiError, port::AdiPort};
+use crate::adi::AdiError;
 
-pub struct AdiDigitalIn<'a> {
-    port: &'a AdiPort,
+pub struct AdiDigitalIn {
+    port: u8,
 }
 
-impl<'a> AdiDigitalIn<'a> {
-    pub fn new(port: &mut AdiPort) -> Self {
-        port.set_config(E_ADI_DIGITAL_IN).unwrap();
+impl AdiDigitalIn {
+    pub fn new(port: u8) -> Self {
         Self { port }
     }
 
     pub fn new_press(&self) -> Result<bool, AdiError> {
-        Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_digital_get_new_press(*self.port.deref())) != 0 })
+        Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_digital_get_new_press(self.port)) != 0 })
     }
 
     pub fn value(&self) -> Result<bool, AdiError> {
-        Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_digital_read(*self.port.deref())) != 0 })
+        Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_digital_read(self.port)) != 0 })
     }
 }
 
-impl<'a> Deref for AdiDigitalIn<'a> {
-    type Target = AdiPort;
+impl Deref for AdiDigitalIn {
+    type Target = u8;
     fn deref(&self) -> &Self::Target {
         &self.port
     }
 }
 
-impl<'a> DerefMut for AdiDigitalIn<'a> {
+impl DerefMut for AdiDigitalIn {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.port
     }
 }
 
-pub struct AdiDigitalOut<'a> {
-    port: &'a AdiPort,
+pub struct AdiDigitalOut {
+    port: u8,
 }
 
-impl<'a> AdiDigitalOut<'a> {
-    pub fn new(port: &mut AdiPort) -> Self {
-        port.set_config(E_ADI_DIGITAL_OUT).unwrap();
+impl AdiDigitalOut {
+    pub fn new(port: u8) -> Self {
         Self { port }
     }
 
     pub fn set_value(&mut self, value: bool) -> Result<(), AdiError> {
-        Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_digital_write(*self.port.deref(), value)) })
+        Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_digital_write(self.port, value)) })
     }
 }
 
-impl<'a> Deref for AdiDigitalOut<'a> {
-    type Target = AdiPort;
+impl Deref for AdiDigitalOut {
+    type Target = u8;
     fn deref(&self) -> &Self::Target {
         &self.port
     }
 }
 
-impl<'a> DerefMut for AdiDigitalOut<'a> {
+impl DerefMut for AdiDigitalOut {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.port
     }

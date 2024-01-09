@@ -1,47 +1,44 @@
-use crate::adi::{
-    AdiError,
-    port::AdiPort
-};
+use crate::adi::AdiError;
 
 use pros_sys::PROS_ERR;
 
-use core::ops::{
+use core::{ops::{
     Deref,
     DerefMut
-};
+}, panic};
 
 use crate::error::bail_on;
 
-pub struct AdiMotor<'a> {
-    port: &'a AdiPort,
+pub struct AdiMotor {
+    port: u8
 }
 
-impl<'a> AdiMotor<'a> {
-    pub fn new(port: &mut AdiPort) -> Self {
+impl AdiMotor {
+    pub fn new(port: u8) -> Self {
         Self { port }
     }
 
-    pub fn set_value(&mut self, value: i8) -> Result<(), AdiError> {
-        Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_motor_set(*self.port.deref(), value)) })
+    pub fn set_value(&self, value: i8) -> Result<i32, AdiError> {
+        Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_motor_set(self.port, value)) })
     }
 
     pub fn value(&self) -> Result<i32, AdiError> {
-        Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_motor_get(*self.port.deref())) })
+        Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_motor_get(self.port)) })
     }
 
-    pub fn stop(&mut self) -> Result<(), AdiError> {
-        Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_motor_stop(*self.port.deref())) })
+    pub fn stop(&self) -> Result<i32, AdiError> {
+        Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_motor_stop(self.port)) })
     }
 }
 
-impl<'a> Deref for AdiMotor<'a> {
-    type Target = AdiPort;
+impl Deref for AdiMotor {
+    type Target = u8;
     fn deref(&self) -> &Self::Target {
         &self.port
     }
 }
 
-impl<'a> DerefMut for AdiMotor<'a> {
+impl DerefMut for AdiMotor {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.port
     }

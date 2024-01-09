@@ -1,7 +1,4 @@
-use crate::adi::{
-    AdiError,
-    port::AdiPort
-};
+use crate::adi::AdiError;
 
 use core::ffi::c_double;
 
@@ -14,36 +11,36 @@ use core::ops::{
 
 use crate::error::bail_on;
 
-pub struct AdiGyro<'a> {
-    port: &'a AdiPort,
+pub struct AdiGyro {
+    port: u8,
     reference: i32
 }
 
-impl<'a> AdiGyro<'a> {
-    pub unsafe fn new(port: &mut AdiPort, multiplier: c_double) -> Self {
+impl AdiGyro {
+    pub unsafe fn new(port: u8, multiplier: c_double) -> Self {
         Self {
-            port: port,
-            reference: pros_sys::adi_gyro_init(**port.deref(), multiplier)
+            port,
+            reference: pros_sys::adi_gyro_init(port, multiplier)
         }
     }
 
-    pub fn value(&self) -> Result<i32, AdiError> {
+    pub fn value(&self) -> Result<f64, AdiError> {
         Ok(unsafe { bail_on!(PROS_ERR.into(), pros_sys::adi_gyro_get(self.reference)) })
     }
 
-    pub fn reset(&mut self) -> Result<(), AdiError> {
+    pub fn reset(&self) -> Result<i32, AdiError> {
         Ok(unsafe { bail_on!(PROS_ERR.into(), pros_sys::adi_gyro_reset(self.reference)) })
     }
 }
 
-impl<'a> Deref for AdiGyro<'a> {
-    type Target = AdiPort;
+impl Deref for AdiGyro {
+    type Target = u8;
     fn deref(&self) -> &Self::Target {
         &self.port
     }
 }
 
-impl<'a> DerefMut for AdiGyro<'a> {
+impl DerefMut for AdiGyro {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.port
     }
