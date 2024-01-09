@@ -5,11 +5,6 @@ use pros_sys::{
     adi_ultrasonic_t
 };
 
-use core::ops::{
-    Deref,
-    DerefMut
-};
-
 use crate::error::bail_on;
 
 type ext_adi_port_tuple_t = (u8, u8);
@@ -33,18 +28,5 @@ impl AdiUltrasonic {
 
     pub fn shutdown(&self) -> Result<i32, AdiError> {
         Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_ultrasonic_shutdown(self.reference)) })
-    }
-}
-
-impl Deref for AdiUltrasonic {
-    type Target = ext_adi_port_tuple_t;
-    fn deref(&self) -> &Self::Target {
-        &self.tup
-    }
-}
-
-impl DerefMut for AdiUltrasonic {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.tup
     }
 }

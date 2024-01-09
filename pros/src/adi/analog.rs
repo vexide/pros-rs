@@ -4,11 +4,6 @@ use crate::error::bail_on;
 
 use pros_sys::PROS_ERR;
 
-use core::ops::{
-    Deref,
-    DerefMut
-};
-
 pub struct AdiAnalogIn {
     port: u8,
 }
@@ -35,19 +30,6 @@ impl AdiAnalogIn {
     }
 }
 
-impl Deref for AdiAnalogIn {
-    type Target = u8;
-    fn deref(&self) -> &Self::Target {
-        &self.port
-    }
-}
-
-impl DerefMut for AdiAnalogIn {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.port
-    }
-}
-
 pub struct AdiAnalogOut {
     port: u8,
 }
@@ -62,18 +44,5 @@ impl AdiAnalogOut {
             PROS_ERR,
             unsafe { pros_sys::adi_port_set_value(self.port, value) }
         }
-    }
-}
-
-impl Deref for AdiAnalogOut {
-    type Target = u8;
-    fn deref(&self) -> &Self::Target {
-        &self.port
-    }
-}
-
-impl DerefMut for AdiAnalogOut {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.port
     }
 }

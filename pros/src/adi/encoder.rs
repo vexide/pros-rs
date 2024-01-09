@@ -5,11 +5,6 @@ use pros_sys::{
     adi_encoder_t
 };
 
-use core::ops::{
-    Deref,
-    DerefMut
-};
-
 use crate::error::bail_on;
 
 pub struct AdiEncoder {
@@ -35,18 +30,5 @@ impl AdiEncoder {
 
     pub fn value(&self) -> Result<i32, AdiError> {
         Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_encoder_get(self.reference)) })
-    }
-}
-
-impl Deref for AdiEncoder {
-    type Target = (u8, u8);
-    fn deref(&self) -> &Self::Target {
-        &(self.port_top, self.port_bottom)
-    }
-}
-
-impl DerefMut for AdiEncoder {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut (self.port_top, self.port_bottom)
     }
 }

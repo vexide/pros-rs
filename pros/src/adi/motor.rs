@@ -2,10 +2,7 @@ use crate::adi::AdiError;
 
 use pros_sys::PROS_ERR;
 
-use core::{ops::{
-    Deref,
-    DerefMut
-}, panic};
+use core::panic;
 
 use crate::error::bail_on;
 
@@ -28,18 +25,5 @@ impl AdiMotor {
 
     pub fn stop(&self) -> Result<i32, AdiError> {
         Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_motor_stop(self.port)) })
-    }
-}
-
-impl Deref for AdiMotor {
-    type Target = u8;
-    fn deref(&self) -> &Self::Target {
-        &self.port
-    }
-}
-
-impl DerefMut for AdiMotor {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.port
     }
 }

@@ -1,6 +1,3 @@
-
-use core::ops::{Deref, DerefMut};
-
 use crate::error::bail_on;
 
 use pros_sys::PROS_ERR;
@@ -25,19 +22,6 @@ impl AdiDigitalIn {
     }
 }
 
-impl Deref for AdiDigitalIn {
-    type Target = u8;
-    fn deref(&self) -> &Self::Target {
-        &self.port
-    }
-}
-
-impl DerefMut for AdiDigitalIn {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.port
-    }
-}
-
 pub struct AdiDigitalOut {
     port: u8,
 }
@@ -49,18 +33,5 @@ impl AdiDigitalOut {
 
     pub fn set_value(&mut self, value: bool) -> Result<(), AdiError> {
         Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_digital_write(self.port, value)) })
-    }
-}
-
-impl Deref for AdiDigitalOut {
-    type Target = u8;
-    fn deref(&self) -> &Self::Target {
-        &self.port
-    }
-}
-
-impl DerefMut for AdiDigitalOut {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.port
     }
 }
