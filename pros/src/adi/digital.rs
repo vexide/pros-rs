@@ -2,14 +2,18 @@ use crate::error::bail_on;
 
 use pros_sys::PROS_ERR;
 
-use crate::adi::AdiError;
+use crate::adi::{
+    AdiError,
+    AdiSlot
+};
 
 pub struct AdiDigitalIn {
     port: u8,
 }
 
 impl AdiDigitalIn {
-    pub fn new(port: u8) -> Self {
+    pub fn new(slot: AdiSlot) -> Self {
+        let port = slot as u8;
         Self { port }
     }
 
@@ -27,7 +31,8 @@ pub struct AdiDigitalOut {
 }
 
 impl AdiDigitalOut {
-    pub fn new(port: u8) -> Self {
+    pub fn new(slot: AdiSlot) -> Self {
+        let port = slot as u8;
         Self { port }
     }
 

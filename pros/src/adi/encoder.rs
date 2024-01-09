@@ -1,4 +1,7 @@
-use crate::adi::AdiError;
+use crate::adi::{
+    AdiError,
+    AdiSlot
+};
 
 use pros_sys::{
     PROS_ERR,
@@ -15,12 +18,12 @@ pub struct AdiEncoder {
 }
 
 impl AdiEncoder {
-    pub unsafe fn new(port_top: u8, port_bottom: u8, reverse: bool) -> Self {
+    pub unsafe fn new(port_top: AdiSlot, port_bottom: AdiSlot, reverse: bool) -> Self {
         Self {
-            port_top,
-            port_bottom,
+            port_top: port_top as u8,
+            port_bottom: port_bottom as u8,
             reverse,
-            reference: pros_sys::adi_encoder_init(port_top, port_bottom, reverse)
+            reference: pros_sys::adi_encoder_init(port_top as u8, port_bottom as u8, reverse)
         }
     }
 

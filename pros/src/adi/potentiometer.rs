@@ -1,4 +1,7 @@
-use crate::adi::AdiError;
+use crate::adi::{
+    AdiError,
+    AdiSlot
+};
 
 use pros_sys::PROS_ERR;
 
@@ -10,10 +13,10 @@ pub struct AdiPotentiometer {
 }
 
 impl AdiPotentiometer {
-    pub unsafe fn new(port: u8) -> Self {
+    pub unsafe fn new(port: AdiSlot) -> Self {
         Self {
-            port: port,
-            reference: pros_sys::adi_potentiometer_init(port)
+            port: port as u8,
+            reference: pros_sys::adi_potentiometer_init(port as u8)
         }
     }
 

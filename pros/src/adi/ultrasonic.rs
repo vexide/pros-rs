@@ -1,4 +1,7 @@
-use crate::adi::AdiError;
+use crate::adi::{
+    AdiError,
+    AdiSlot
+};
 
 use pros_sys::{
     PROS_ERR,
@@ -7,18 +10,21 @@ use pros_sys::{
 
 use crate::error::bail_on;
 
-type ext_adi_port_tuple_t = (u8, u8);
+type ext_adi_u8_tuple_t = (u8, u8);
+type ext_adi_port_tuple_t = (AdiSlot, AdiSlot);
 
 pub struct AdiUltrasonic {
-    tup: ext_adi_port_tuple_t,
+    tup: ext_adi_u8_tuple_t,
     reference: adi_ultrasonic_t,
 }
 
 impl AdiUltrasonic {
     pub unsafe fn new(tup: ext_adi_port_tuple_t) -> Self {
+        let port_top = tup.0 as u8;
+        let port_bottom = tup.1 as u8;
         Self {
-            tup,
-            reference: pros_sys::adi_ultrasonic_init(tup.0, tup.1),
+            tup: (port_top, port_bottom),
+            reference: pros_sys::adi_ultrasonic_init(port_top, port_bottom),
         }
     }
 

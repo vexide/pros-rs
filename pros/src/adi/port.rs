@@ -4,7 +4,10 @@ use core::{
     ops::{Deref, DerefMut},
 };
 
-use crate::adi::AdiError;
+use crate::adi::{
+    AdiError,
+    AdiSlot
+};
 
 use crate::error::bail_on;
 
@@ -18,11 +21,12 @@ impl AdiPort {
     /// # Safety
     ///
     /// The port must be above 0 and below [`pros_sys::NUM_ADI_PORTS`].
-    pub unsafe fn new_unchecked(port: u8) -> Self {
-        Self(port)
+    pub unsafe fn new_unchecked(port: AdiSlot) -> Self {
+        Self(port as u8)
     }
     /// Create an AdiPort, returning `None` if the port is invalid.
-    pub fn try_new(port: u8) -> Option<Self> {
+    pub fn try_new(slot: AdiSlot) -> Option<Self> {
+        let port = slot as u8;
         if c_int::from(port) < pros_sys::NUM_ADI_PORTS {
             Some(Self(port))
         } else {
@@ -34,7 +38,7 @@ impl AdiPort {
     /// # Panics
     ///
     /// Panics if the port is greater than or equal to [`pros_sys::NUM_ADI_PORTS`].
-    pub fn new(port: u8) -> Self {
+    pub fn new(port: AdiSlot) -> Self {
         Self::try_new(port).expect("Invalid ADI port")
     }
 

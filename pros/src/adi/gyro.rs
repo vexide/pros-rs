@@ -1,4 +1,7 @@
-use crate::adi::AdiError;
+use crate::adi::{
+    AdiError,
+    AdiSlot
+};
 
 use core::ffi::c_double;
 
@@ -12,10 +15,10 @@ pub struct AdiGyro {
 }
 
 impl AdiGyro {
-    pub unsafe fn new(port: u8, multiplier: c_double) -> Self {
+    pub unsafe fn new(port: AdiSlot, multiplier: c_double) -> Self {
         Self {
-            port,
-            reference: pros_sys::adi_gyro_init(port, multiplier)
+            port: port as u8,
+            reference: pros_sys::adi_gyro_init(port as u8, multiplier)
         }
     }
 

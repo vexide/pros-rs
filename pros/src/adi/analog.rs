@@ -1,4 +1,7 @@
-use crate::adi::AdiError;
+use crate::adi::{
+    AdiError,
+    AdiSlot
+};
 
 use crate::error::bail_on;
 
@@ -9,7 +12,8 @@ pub struct AdiAnalogIn {
 }
 
 impl AdiAnalogIn {
-    pub fn new(port: u8) -> Self {
+    pub fn new(slot: AdiSlot) -> Self {
+        let port = slot as u8;
         Self { port }
     }
 
@@ -35,7 +39,8 @@ pub struct AdiAnalogOut {
 }
 
 impl AdiAnalogOut {
-    pub fn new(port: u8) -> Self {
+    pub fn new(slot: AdiSlot) -> Self {
+        let port = slot as u8;
         Self { port }
     }
 
