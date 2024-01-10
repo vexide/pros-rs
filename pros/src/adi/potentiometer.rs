@@ -25,12 +25,12 @@ impl AdiPotentiometer {
         }
     }
 
-    /// Create an AdiPotentiometer, throwing an error if the port is invalid.
+    /// Create an AdiPotentiometer, panicking if the port is invalid.
     /// 
     /// # Panics
     /// 
     /// Panics if the port is greater than [`pros_sys::NUM_ADI_PORTS`].
-    pub unsafe fn new(port: AdiSlot) -> Self {
+    pub unsafe fn new_raw(port: AdiSlot) -> Self {
         if {port as u8} < 1 || {port as u8} > {pros_sys::NUM_ADI_PORTS as u8} {
             panic!("Invalid ADI port");
         }
@@ -41,7 +41,7 @@ impl AdiPotentiometer {
     }
 
     /// Create an AdiPotentiometer, returning err `AdiError::InvalidPort` if the port is invalid.
-    pub unsafe fn try_new(port: AdiSlot) -> Result<Self, AdiError> {
+    pub unsafe fn new(port: AdiSlot) -> Result<Self, AdiError> {
         if {port as u8} < 1 || {port as u8} > {pros_sys::NUM_ADI_PORTS as u8} {
             return Err(AdiError::InvalidPort);
         }

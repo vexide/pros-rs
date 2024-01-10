@@ -33,12 +33,12 @@ impl AdiUltrasonic {
         }
     }
 
-    /// Create an AdiUltrasonic, throwing an error if the port is invalid.
+    /// Create an AdiUltrasonic, panicking if the port is invalid.
     ///
     /// # Panics
     /// 
     /// Panics if the port is greater than [`pros_sys::NUM_ADI_PORTS`].
-    pub unsafe fn new(tup: ext_adi_port_tuple_t) -> Self {
+    pub unsafe fn new_raw(tup: ext_adi_port_tuple_t) -> Self {
         let port_top = tup.0 as u8;
         let port_bottom = tup.1 as u8;
         if port_top < 1 || port_top > {pros_sys::NUM_ADI_PORTS as u8} {
@@ -54,7 +54,7 @@ impl AdiUltrasonic {
     }
 
     /// Create an AdiUltrasonic, returning err `AdiError::InvalidPort` if the port is invalid.
-    pub unsafe fn try_new(tup: ext_adi_port_tuple_t) -> Result<Self, AdiError> {
+    pub unsafe fn new(tup: ext_adi_port_tuple_t) -> Result<Self, AdiError> {
         let port_top = tup.0 as u8;
         let port_bottom = tup.1 as u8;
         if port_top < 1 || port_top > {pros_sys::NUM_ADI_PORTS as u8} {

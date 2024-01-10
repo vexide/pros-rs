@@ -27,8 +27,8 @@ impl AdiGyro {
         }
     }
     
-    /// Create an AdiGyro, throwing an error if the port is invalid.
-    pub unsafe fn new(port: AdiSlot, multiplier: c_double) -> Self {
+    /// Create an AdiGyro, panicking if the port is invalid.
+    pub unsafe fn new_raw(port: AdiSlot, multiplier: c_double) -> Self {
         if {port as u8} < 1 || {port as u8} > {pros_sys::NUM_ADI_PORTS as u8} {
             panic!("Invalid ADI port");
         }
@@ -39,7 +39,7 @@ impl AdiGyro {
     }
 
     /// Create an AdiGyro, returning err `AdiError::InvalidPort` if the port is invalid.
-    pub unsafe fn try_new(port: AdiSlot, multiplier: c_double) -> Result<Self, AdiError> {
+    pub unsafe fn new(port: AdiSlot, multiplier: c_double) -> Result<Self, AdiError> {
         if {port as u8} < 1 || {port as u8} > {pros_sys::NUM_ADI_PORTS as u8} {
             return Err(AdiError::InvalidPort);
         }

@@ -23,8 +23,8 @@ impl AdiAnalogIn {
         }
     }
     
-    /// Create an AdiAnalogIn, throwing an error if the port is invalid.
-    pub fn new(slot: AdiSlot) -> Self {
+    /// Create an AdiAnalogIn, panicking if the port is invalid.
+    pub fn new_raw(slot: AdiSlot) -> Self {
         let port = slot as u8;
         if port < 1 || port > {pros_sys::NUM_ADI_PORTS as u8} {
             panic!("Invalid ADI port");
@@ -33,7 +33,7 @@ impl AdiAnalogIn {
     }
 
     /// Create an AdiAnalogIn, returning err `AdiError::InvalidPort` if the port is invalid.
-    pub fn try_new(slot: AdiSlot) -> Result<Self, AdiError> {
+    pub fn new(slot: AdiSlot) -> Result<Self, AdiError> {
         let port = slot as u8;
         if port < 1 || port > {pros_sys::NUM_ADI_PORTS as u8} {
             return Err(AdiError::InvalidPort);
@@ -88,7 +88,7 @@ impl AdiAnalogOut {
         }
     }
 
-    /// Create an AdiAnalogOut, throwing an error if the port is invalid.
+    /// Create an AdiAnalogOut, panicking if the port is invalid.
     pub fn new(slot: AdiSlot) -> Self {
         let port = slot as u8;
         if port < 1 || port > {pros_sys::NUM_ADI_PORTS as u8} {

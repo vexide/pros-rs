@@ -32,8 +32,8 @@ impl AdiEncoder {
         }
     }
     
-    /// Create an AdiEncoder, throwing an error if the port is invalid.
-    pub unsafe fn new(port_top: AdiSlot, port_bottom: AdiSlot, reverse: bool) -> Self {
+    /// Create an AdiEncoder, panicking if the port is invalid.
+    pub unsafe fn new_raw(port_top: AdiSlot, port_bottom: AdiSlot, reverse: bool) -> Self {
         if {port_bottom as u8} < 1 || {port_top as u8} > {pros_sys::NUM_ADI_PORTS as u8} {
             panic!("Invalid ADI port");
         }
@@ -46,7 +46,7 @@ impl AdiEncoder {
     }
 
     /// Create an AdiEncoder, returning err `AdiError::InvalidPort` if the port is invalid.
-    pub unsafe fn try_new(port_top: AdiSlot, port_bottom: AdiSlot, reverse: bool) -> Result<Self, AdiError> {
+    pub unsafe fn new(port_top: AdiSlot, port_bottom: AdiSlot, reverse: bool) -> Result<Self, AdiError> {
         if {port_bottom as u8} < 1 || {port_top as u8} > {pros_sys::NUM_ADI_PORTS as u8} {
             return Err(AdiError::InvalidPort);
         }
