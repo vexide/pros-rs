@@ -19,10 +19,12 @@ impl AdiPotentiometer {
     /// # Safety
     ///
     /// The port must be above 0 and below [`pros_sys::NUM_ADI_PORTS`].
-    pub unsafe fn new_unchecked(port: AdiSlot) -> Self {
-        Self {
-            port: port as u8,
-            reference: pros_sys::adi_potentiometer_init(port as u8)
+    pub fn new_unchecked(port: AdiSlot) -> Self {
+        unsafe {
+            Self {
+                port: port as u8,
+                reference: pros_sys::adi_potentiometer_init(port as u8)
+            }
         }
     }
 
@@ -31,25 +33,29 @@ impl AdiPotentiometer {
     /// # Panics
     /// 
     /// Panics if the port is greater than [`pros_sys::NUM_ADI_PORTS`].
-    pub unsafe fn new_raw(port: AdiSlot) -> Self {
+    pub fn new_raw(port: AdiSlot) -> Self {
         if {port as u8} < 1 || {port as u8} > {pros_sys::NUM_ADI_PORTS as u8} {
             panic!("Invalid ADI port");
         }
-        Self {
-            port: port as u8,
-            reference: pros_sys::adi_potentiometer_init(port as u8)
+        unsafe {
+            Self {
+                port: port as u8,
+                reference: pros_sys::adi_potentiometer_init(port as u8)
+            }
         }
     }
 
     /// Create an AdiPotentiometer, returning err `AdiError::InvalidPort` if the port is invalid.
-    pub unsafe fn new(port: AdiSlot) -> Result<Self, AdiError> {
+    pub fn new(port: AdiSlot) -> Result<Self, AdiError> {
         if {port as u8} < 1 || {port as u8} > {pros_sys::NUM_ADI_PORTS as u8} {
             return Err(AdiError::InvalidPort);
         }
-        Ok(Self {
-            port: port as u8,
-            reference: pros_sys::adi_potentiometer_init(port as u8)
-        })
+        unsafe {
+            Ok(Self {
+                port: port as u8,
+                reference: pros_sys::adi_potentiometer_init(port as u8)
+            })
+        }
     }
 
     /// Gets the current potentiometer angle in tenths of a degree.
@@ -62,14 +68,14 @@ impl AdiPotentiometer {
 
 impl New for AdiPotentiometer {
     fn new(slot: AdiSlot) -> Result<Self, AdiError> {
-        unsafe { Self::new(slot) }
+        Self::new(slot)
     }
 
     fn new_raw(slot: AdiSlot) -> Self {
-        unsafe { Self::new_raw(slot) }
+        Self::new_raw(slot)
     }
 
-    unsafe fn new_unchecked(slot: AdiSlot) -> Self {
+    fn new_unchecked(slot: AdiSlot) -> Self {
         Self::new_unchecked(slot)
     }
 }

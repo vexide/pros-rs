@@ -18,7 +18,7 @@ impl AdiDigitalIn {
     /// # Safety
     /// 
     /// The port must be above 0 and below [`pros_sys::NUM_ADI_PORTS`].
-    pub unsafe fn new_unchecked(slot: AdiSlot) -> Self {
+    pub  fn new_unchecked(slot: AdiSlot) -> Self {
         Self {
             port: slot as u8
         }
@@ -62,7 +62,7 @@ impl New for AdiDigitalIn {
         Self::new(slot)
     }
 
-    unsafe fn new_unchecked(slot: AdiSlot) -> Self {
+    fn new_unchecked(slot: AdiSlot) -> Self {
         Self::new_unchecked(slot)
     }
 }
@@ -77,7 +77,7 @@ impl AdiDigitalOut {
     /// # Safety
     ///
     /// The port must be above 0 and below [`pros_sys::NUM_ADI_PORTS`].
-    pub unsafe fn new_unchecked(slot: AdiSlot) -> Self {
+    pub fn new_unchecked(slot: AdiSlot) -> Self {
         Self {
             port: slot as u8
         }
@@ -116,7 +116,7 @@ impl New for AdiDigitalOut {
         Self::new_raw(slot)
     }
 
-    unsafe fn new_unchecked(slot: AdiSlot) -> Self {
+    fn new_unchecked(slot: AdiSlot) -> Self {
         Self::new_unchecked(slot)
     }
 }

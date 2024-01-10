@@ -71,7 +71,9 @@ impl New for AdiEncoder {
         unsafe { Self::new_raw(slot, slot, false) }
     }
 
-    unsafe fn new_unchecked(slot: AdiSlot) -> Self {
-        Self::new_unchecked(slot, slot, false)
+    fn new_unchecked(slot: AdiSlot) -> Self {
+        unsafe {
+            Self::new_unchecked(slot, slot, false)
+        }
     }
 }

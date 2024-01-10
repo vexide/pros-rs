@@ -22,7 +22,7 @@ impl AdiPort {
     /// # Safety
     ///
     /// The port must be above 0 and below [`pros_sys::NUM_ADI_PORTS`].
-    pub unsafe fn new_unchecked(port: AdiSlot) -> Self {
+    pub fn new_unchecked(port: AdiSlot) -> Self {
         Self(port as u8)
     }
 
@@ -109,7 +109,7 @@ impl New for AdiPort {
         Self::new(slot)
     }
 
-    unsafe fn new_unchecked(slot: AdiSlot) -> Self {
+    fn new_unchecked(slot: AdiSlot) -> Self {
         Self::new_unchecked(slot)
     }
 }

@@ -21,10 +21,12 @@ impl AdiGyro {
     /// # Safety
     ///
     /// The port must be above 0 and below [`pros_sys::NUM_ADI_PORTS`].
-    pub unsafe fn new_unchecked(port: AdiSlot, multiplier: c_double) -> Self {
-        Self {
-            port: port as u8,
-            reference: pros_sys::adi_gyro_init(port as u8, multiplier)
+    pub fn new_unchecked(port: AdiSlot, multiplier: c_double) -> Self {
+        unsafe {
+            Self {
+                port: port as u8,
+                reference: pros_sys::adi_gyro_init(port as u8, multiplier)
+            }
         }
     }
     
@@ -66,7 +68,7 @@ impl New for AdiGyro {
         unsafe { Self::new_raw(slot, 1.0) }
     }
 
-    unsafe fn new_unchecked(slot: AdiSlot) -> Self {
+    fn new_unchecked(slot: AdiSlot) -> Self {
         Self::new_unchecked(slot, 1.0)
     }
 }

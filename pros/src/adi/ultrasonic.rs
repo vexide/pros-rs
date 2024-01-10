@@ -25,12 +25,14 @@ impl AdiUltrasonic {
     /// # Safety
     ///
     /// The port must be above 0 and below [`pros_sys::NUM_ADI_PORTS`].
-    pub unsafe fn new_unchecked(tup: ext_adi_u8_tuple_t) -> Self {
+    pub fn new_unchecked(tup: ext_adi_u8_tuple_t) -> Self {
         let port_top = tup.0 as u8;
         let port_bottom = tup.1 as u8;
-        Self {
-            tup,
-            reference: pros_sys::adi_ultrasonic_init(port_top, port_bottom),
+        unsafe {
+            Self {
+                tup,
+                reference: pros_sys::adi_ultrasonic_init(port_top, port_bottom),
+            }
         }
     }
 
@@ -88,13 +90,11 @@ impl AdiUltrasonic {
 trait NewUltrasonic {
     fn new(slot: ext_adi_port_tuple_t) -> Result<Self, AdiError> where Self: Sized;
     fn new_raw(slot: ext_adi_port_tuple_t) -> Self;
-    unsafe fn new_unchecked(slot: ext_adi_u8_tuple_t) -> Self;
+    fn new_unchecked(slot: ext_adi_u8_tuple_t) -> Self;
 }
 
 impl NewUltrasonic for AdiUltrasonic {
     fn new(tup: ext_adi_port_tuple_t) -> Result<Self, AdiError> {
-        let port_top = tup.0 as u8;
-        let port_bottom = tup.1 as u8;
         unsafe { Self::new(tup) }
     }
 
@@ -102,7 +102,7 @@ impl NewUltrasonic for AdiUltrasonic {
         unsafe { Self::new_raw(tup) }
     }
 
-    unsafe fn new_unchecked(tup: ext_adi_u8_tuple_t) -> Self {
+    fn new_unchecked(tup: ext_adi_u8_tuple_t) -> Self {
         Self::new_unchecked(tup)
     }
 }
