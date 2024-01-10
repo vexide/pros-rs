@@ -38,6 +38,9 @@ pub enum AdiError {
 
     #[snafu(display("The port specified is invalid."))]
     InvalidPort,
+
+    #[snafu(display("Generic exception."))]
+    Generic,
     
     #[snafu(display("{source}"), context(false))]
     Port { source: PortError },
@@ -47,10 +50,12 @@ map_errno! {
     AdiError {
         EACCES => Self::AlreadyInUse,
         EADDRINUSE => Self::DigitalInputNotConfigured,
+        _ => Self::Generic
     }
     inherit PortError;
 }
 
+#[derive(Debug, Copy, Clone)]
 pub enum AdiSlot {
     A = 1,
     B = 2,

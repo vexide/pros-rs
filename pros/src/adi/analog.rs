@@ -107,10 +107,10 @@ impl AdiAnalogOut {
     }
 
     /// Sets the output for the Analog Output from 0 (0V) to 4095 (5V).
-    pub fn set_value(&mut self, value: i32) -> Result<(), AdiError> {
-        bail_on! {
+    pub fn set_value(&mut self, value: i32) -> Result<i32, AdiError> {
+        Ok(unsafe { bail_on! {
             PROS_ERR,
             unsafe { pros_sys::adi_port_set_value(self.port, value) }
-        }
+        }})
     }
 }

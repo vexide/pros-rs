@@ -46,12 +46,11 @@ impl AdiPort {
     /// Sets the value for the given ADI port
     /// 
     /// This only works on ports configured as outputs, and the behavior will change depending on the configuration of the port.
-    pub fn set_value(&mut self, value: i32) -> Result<(), AdiError> {
-        bail_on! {
+    pub fn set_value(&mut self, value: i32) -> Result<i32, AdiError> {
+        Ok(bail_on! {
             PROS_ERR,
             unsafe { pros_sys::adi_port_set_value(self.0, value) }
-        }
-        Ok(())
+        })
     }
 
     /// Gets the current ultrasonic sensor value in centimeters.
@@ -62,25 +61,23 @@ impl AdiPort {
     }
 
     /// Attempts to set the configuration for the given ADI port.
-    pub fn try_set_config(port: u8, config: adi_port_config_e_t) -> Result<(), AdiError> {
+    pub fn try_set_config(port: u8, config: adi_port_config_e_t) -> Result<i32, AdiError> {
         if config == E_ADI_DIGITAL_IN || config == E_ADI_ANALOG_OUT || config == E_ADI_DIGITAL_OUT || config == E_ADI_ANALOG_IN || config == E_ADI_LEGACY_ENCODER || config == E_ADI_LEGACY_ULTRASONIC {
-            bail_on! {
+            Ok(bail_on! {
                 PROS_ERR,
                 unsafe { pros_sys::adi_port_set_config(port, config) }
-            }
-            Ok(())
+            })
         } else {
             Err(AdiError::InvalidConfigType)
         }
     }
 
     /// Configures an ADI port to act as a given sensor type.
-    pub fn set_config(&mut self, config: adi_port_config_e_t) -> Result<(), AdiError> {
-        bail_on! {
+    pub fn set_config(&mut self, config: adi_port_config_e_t) -> Result<i32, AdiError> {
+        Ok(bail_on! {
             PROS_ERR,
             unsafe { pros_sys::adi_port_set_config(self.0, config) }
-        }
-        Ok(())
+        })
     }
 
     /// Returns the configuration for the given ADI port.
