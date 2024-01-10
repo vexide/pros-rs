@@ -6,7 +6,8 @@ use core::{
 
 use crate::adi::{
     AdiError,
-    AdiSlot
+    AdiSlot,
+    New
 };
 
 use crate::error::bail_on;
@@ -96,5 +97,19 @@ impl Deref for AdiPort {
 impl DerefMut for AdiPort {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
+    }
+}
+
+impl New for AdiPort {
+    fn new(slot: AdiSlot) -> Result<Self, AdiError> {
+        Self::try_new(slot).ok_or(AdiError::InvalidPort)
+    }
+
+    fn new_raw(slot: AdiSlot) -> Self {
+        Self::new(slot)
+    }
+
+    unsafe fn new_unchecked(slot: AdiSlot) -> Self {
+        Self::new_unchecked(slot)
     }
 }

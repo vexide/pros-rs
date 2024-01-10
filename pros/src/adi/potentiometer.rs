@@ -1,6 +1,7 @@
 use crate::adi::{
     AdiError,
-    AdiSlot
+    AdiSlot,
+    New
 };
 
 use pros_sys::PROS_ERR;
@@ -56,5 +57,19 @@ impl AdiPotentiometer {
     /// The original potentiometer rotates 250 degrees thus returning an angle between 0-250 degrees. Potentiometer V2 rotates 330 degrees thus returning an angle between 0-330 degrees. This function uses the following values of errno when an error state is reached:
     pub fn angle(&self) -> Result<f64, AdiError> {
         Ok(unsafe { bail_on!(PROS_ERR.into(), pros_sys::adi_potentiometer_get_angle(self.reference)) })
+    }
+}
+
+impl New for AdiPotentiometer {
+    fn new(slot: AdiSlot) -> Result<Self, AdiError> {
+        unsafe { Self::new(slot) }
+    }
+
+    fn new_raw(slot: AdiSlot) -> Self {
+        unsafe { Self::new_raw(slot) }
+    }
+
+    unsafe fn new_unchecked(slot: AdiSlot) -> Self {
+        Self::new_unchecked(slot)
     }
 }

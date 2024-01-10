@@ -1,11 +1,12 @@
 use crate::adi::{
     AdiError,
-    AdiSlot
+    AdiSlot,
+    New
 };
 
 use pros_sys::{
     PROS_ERR,
-    adi_ultrasonic_t
+    adi_ultrasonic_t, ext_adi
 };
 
 use crate::error::bail_on;
@@ -81,5 +82,27 @@ impl AdiUltrasonic {
     /// This is not officially a function in the PROS API, however it is in the kernel.
     pub fn shutdown(&self) -> Result<i32, AdiError> {
         Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_ultrasonic_shutdown(self.reference)) })
+    }
+}
+
+trait NewUltrasonic {
+    fn new(slot: ext_adi_port_tuple_t) -> Result<Self, AdiError> where Self: Sized;
+    fn new_raw(slot: ext_adi_port_tuple_t) -> Self;
+    unsafe fn new_unchecked(slot: ext_adi_u8_tuple_t) -> Self;
+}
+
+impl NewUltrasonic for AdiUltrasonic {
+    fn new(tup: ext_adi_port_tuple_t) -> Result<Self, AdiError> {
+        let port_top = tup.0 as u8;
+        let port_bottom = tup.1 as u8;
+        unsafe { Self::new(tup) }
+    }
+
+    fn new_raw(tup: ext_adi_port_tuple_t) -> Self {
+        unsafe { Self::new_raw(tup) }
+    }
+
+    unsafe fn new_unchecked(tup: ext_adi_u8_tuple_t) -> Self {
+        Self::new_unchecked(tup)
     }
 }

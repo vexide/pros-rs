@@ -4,7 +4,8 @@ use pros_sys::PROS_ERR;
 
 use crate::adi::{
     AdiError,
-    AdiSlot
+    AdiSlot,
+    New
 };
 
 pub struct AdiDigitalIn {
@@ -52,6 +53,20 @@ impl AdiDigitalIn {
     }
 }
 
+impl New for AdiDigitalIn {
+    fn new(slot: AdiSlot) -> Result<Self, AdiError> {
+        Self::try_new(slot)
+    }
+
+    fn new_raw(slot: AdiSlot) -> Self {
+        Self::new(slot)
+    }
+
+    unsafe fn new_unchecked(slot: AdiSlot) -> Self {
+        Self::new_unchecked(slot)
+    }
+}
+
 pub struct AdiDigitalOut {
     port: u8,
 }
@@ -89,5 +104,19 @@ impl AdiDigitalOut {
     /// Sets the digital value (1 or 0) of a pin.
     pub fn set_value(&mut self, value: bool) -> Result<i32, AdiError> {
         Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_digital_write(self.port, value)) })
+    }
+}
+
+impl New for AdiDigitalOut {
+    fn new(slot: AdiSlot) -> Result<Self, AdiError> {
+        Self::new(slot)
+    }
+
+    fn new_raw(slot: AdiSlot) -> Self {
+        Self::new_raw(slot)
+    }
+
+    unsafe fn new_unchecked(slot: AdiSlot) -> Self {
+        Self::new_unchecked(slot)
     }
 }

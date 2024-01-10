@@ -1,6 +1,7 @@
 use crate::adi::{
     AdiError,
-    AdiSlot
+    AdiSlot,
+    New
 };
 
 use core::ffi::c_double;
@@ -29,13 +30,7 @@ impl AdiGyro {
     
     /// Create an AdiGyro, panicking if the port is invalid.
     pub unsafe fn new_raw(port: AdiSlot, multiplier: c_double) -> Self {
-        if {port as u8} < 1 || {port as u8} > {pros_sys::NUM_ADI_PORTS as u8} {
-            panic!("Invalid ADI port");
-        }
-        Self {
-            port: port as u8,
-            reference: pros_sys::adi_gyro_init(port as u8, multiplier)
-        }
+        Self::new(port, multiplier).unwrap()
     }
 
     /// Create an AdiGyro, returning err `AdiError::InvalidPort` if the port is invalid.
@@ -59,5 +54,19 @@ impl AdiGyro {
     /// Gets the current gyro angle in tenths of a degree. Unless a multiplier is applied to the gyro, the return value will be a whole number representing the number of degrees of rotation times 10.
     pub fn reset(&self) -> Result<i32, AdiError> {
         Ok(unsafe { bail_on!(PROS_ERR.into(), pros_sys::adi_gyro_reset(self.reference)) })
+    }
+}
+
+impl New for AdiGyro {
+    fn new(slot: AdiSlot) -> Result<Self, AdiError> {
+        unsafe { Self::new(slot, 1.0) }
+    }
+
+    fn new_raw(slot: AdiSlot) -> Self {
+        unsafe { Self::new_raw(slot, 1.0) }
+    }
+
+    unsafe fn new_unchecked(slot: AdiSlot) -> Self {
+        Self::new_unchecked(slot, 1.0)
     }
 }

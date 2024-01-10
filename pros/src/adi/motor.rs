@@ -1,6 +1,7 @@
 use crate::adi::{
     AdiError,
-    AdiSlot
+    AdiSlot,
+    New
 };
 
 use pros_sys::PROS_ERR;
@@ -56,5 +57,19 @@ impl AdiMotor {
     /// Stops the given motor.
     pub fn stop(&self) -> Result<i32, AdiError> {
         Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_motor_stop(self.port)) })
+    }
+}
+
+impl New for AdiMotor {
+    fn new(slot: AdiSlot) -> Result<Self, AdiError> {
+        Self::new(slot)
+    }
+
+    fn new_raw(slot: AdiSlot) -> Self {
+        Self::new_raw(slot)
+    }
+
+    unsafe fn new_unchecked(slot: AdiSlot) -> Self {
+        Self::new_unchecked(slot)
     }
 }

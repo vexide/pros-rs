@@ -1,6 +1,7 @@
 use crate::adi::{
     AdiError,
-    AdiSlot
+    AdiSlot,
+    New
 };
 
 use pros_sys::{
@@ -34,15 +35,7 @@ impl AdiEncoder {
     
     /// Create an AdiEncoder, panicking if the port is invalid.
     pub unsafe fn new_raw(port_top: AdiSlot, port_bottom: AdiSlot, reverse: bool) -> Self {
-        if {port_bottom as u8} < 1 || {port_top as u8} > {pros_sys::NUM_ADI_PORTS as u8} {
-            panic!("Invalid ADI port");
-        }
-        Self {
-            port_top: port_top as u8,
-            port_bottom: port_bottom as u8,
-            reverse,
-            reference: pros_sys::adi_encoder_init(port_top as u8, port_bottom as u8, reverse)
-        }
+        Self::new(port_top, port_bottom, reverse).unwrap()
     }
 
     /// Create an AdiEncoder, returning err `AdiError::InvalidPort` if the port is invalid.
@@ -54,7 +47,7 @@ impl AdiEncoder {
             port_top: port_top as u8,
             port_bottom: port_bottom as u8,
             reverse,
-            reference: pros_sys::adi_encoder_init(port_top as u8, port_bottom as u8, reverse)
+            reference: bail_on! {PROS_ERR, pros_sys::adi_encoder_init(port_top as u8, port_bottom as u8, reverse)}
         })
     }
 
@@ -66,5 +59,19 @@ impl AdiEncoder {
     /// Gets the number of ticks recorded by the encoder.
     pub fn value(&self) -> Result<i32, AdiError> {
         Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_encoder_get(self.reference)) })
+    }
+}
+
+impl New for AdiEncoder {
+    fn new(slot: AdiSlot) -> Result<Self, AdiError> {
+        unsafe { Self::new(slot, slot, false) }
+    }
+
+    fn new_raw(slot: AdiSlot) -> Self {
+        unsafe { Self::new_raw(slot, slot, false) }
+    }
+
+    unsafe fn new_unchecked(slot: AdiSlot) -> Self {
+        Self::new_unchecked(slot, slot, false)
     }
 }
