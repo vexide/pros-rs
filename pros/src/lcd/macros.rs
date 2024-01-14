@@ -4,17 +4,20 @@
 
 use core::fmt::{self, Write};
 
+use crate::sync::MutexError;
+
 use super::WRITER;
 
 #[doc(hidden)]
-pub fn _print(args: fmt::Arguments) {
-    WRITER.lock().write_fmt(args).unwrap();
+pub fn _print(args: fmt::Arguments) -> Result<(), MutexError> {
+    WRITER.lock_blocking()?.write_fmt(args).unwrap();
+    Ok(())
 }
 
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => {
-        $crate::lcd::macros::_print(core::format_args!($($arg)*));
+        $crate::lcd::macros::_print(core::format_args!($($arg)*)).unwrap();
     };
 }
 

@@ -8,7 +8,7 @@ extern crate alloc;
 
 use alloc::boxed::Box;
 
-use crate::sync::Mutex;
+use crate::sync::{Mutex, MutexError};
 
 pub struct ButtonsState {
     pub left_pressed: bool,
@@ -46,43 +46,45 @@ lazy_static::lazy_static! {
 }
 
 // this needs to return errors
-pub fn register(cb: impl Fn() + 'static + Send, button: Button) {
+pub fn register(cb: impl Fn() + 'static + Send, button: Button) -> Result<(), MutexError> {
     unsafe {
         pros_sys::lcd_initialize();
     }
 
+    // There isn't really a way to get around unwraping here.
     extern "C" fn button_0_cb() {
-        if let Some(cb) = &BUTTON_CALLBACKS.lock().left_cb {
+        if let Some(cb) = &BUTTON_CALLBACKS.lock_blocking().unwrap().left_cb {
             cb();
         }
     }
 
     extern "C" fn button_1_cb() {
-        if let Some(cb) = &BUTTON_CALLBACKS.lock().middle_cb {
+        if let Some(cb) = &BUTTON_CALLBACKS.lock_blocking().unwrap().middle_cb {
             cb();
         }
     }
 
     extern "C" fn button_2_cb() {
-        if let Some(cb) = &BUTTON_CALLBACKS.lock().right_cb {
+        if let Some(cb) = &BUTTON_CALLBACKS.lock_blocking().unwrap().right_cb {
             cb();
         }
     }
 
     if !match button {
         Button::Left => {
-            BUTTON_CALLBACKS.lock().left_cb = Some(Box::new(cb));
+            BUTTON_CALLBACKS.lock_blocking()?.left_cb = Some(Box::new(cb));
             unsafe { pros_sys::lcd_register_btn0_cb(Some(button_0_cb)) }
         }
         Button::Middle => {
-            BUTTON_CALLBACKS.lock().middle_cb = Some(Box::new(cb));
+            BUTTON_CALLBACKS.lock_blocking()?.middle_cb = Some(Box::new(cb));
             unsafe { pros_sys::lcd_register_btn1_cb(Some(button_1_cb)) }
         }
         Button::Right => {
-            BUTTON_CALLBACKS.lock().right_cb = Some(Box::new(cb));
+            BUTTON_CALLBACKS.lock_blocking()?.right_cb = Some(Box::new(cb));
             unsafe { pros_sys::lcd_register_btn2_cb(Some(button_2_cb)) }
         }
     } {
         panic!("Setting button callback failed, even though lcd initialization was attempted.");
     }
+    Ok(())
 }
