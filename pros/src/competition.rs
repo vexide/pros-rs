@@ -3,6 +3,8 @@
 //! You have the option of getting the entire state ([`get_status`]), or checking a specific one ([`is_autonomous`], etc.).
 //! Once a [`CompetitionStatus`] is created by [`get_status`] it will not be updated again.
 
+use deprecate_until::deprecate_until;
+
 /// The current status of the robot, allowing checks to be made
 /// for autonomous, disabled, and connected states.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -21,21 +23,27 @@ impl CompetitionStatus {
 }
 
 /// Get the current status of the robot.
+#[deprecate_until(remove = ">= 0.7", note = "use `status` instead")]
 pub fn get_status() -> CompetitionStatus {
+    status()
+}
+
+/// Get the current status of the robot.
+pub fn status() -> CompetitionStatus {
     CompetitionStatus(unsafe { pros_sys::misc::competition_get_status() })
 }
 
 /// Check if the robot is in autonomous mode.
 pub fn is_autonomous() -> bool {
-    unsafe { pros_sys::misc::competition_is_autonomous() }
+    status().autonomous()
 }
 
 /// Check if the robot is disabled.
 pub fn is_disabled() -> bool {
-    unsafe { pros_sys::misc::competition_is_disabled() }
+    status().disabled()
 }
 
 /// Check if the robot is connected to a VEX field or competition switch.
 pub fn is_connected() -> bool {
-    unsafe { pros_sys::misc::competition_is_connected() }
+    status().connected()
 }
