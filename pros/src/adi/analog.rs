@@ -28,7 +28,7 @@ impl AdiAnalogIn {
     /// from approximately 500 samples, 1 ms apart, for a 0.5 s period of calibration.
     /// 
     /// The average value thus calculated is returned and stored for later calls
-    /// to the adi_analog_read_calibrated and adi_analog_read_calibrated_HR functions.
+    /// to the value_calibrated and value_calibrated_hr functions.
     /// 
     /// These functions will return the difference between this value and the current
     /// sensor value when called.
@@ -46,18 +46,18 @@ impl AdiAnalogIn {
 
     /// Reads the calibrated value of an analog input channel.
     ///
-    /// The adi_analog_calibrate function must be run first on that channel.
+    /// The calibrate function must be run first on that channel.
     /// 
     /// This function is inappropriate for sensor values intended for integration,
     /// as round-off error can accumulate causing drift over time.
-    /// Use adi_analog_read_calibrated_HR instead.
+    /// Use value_calbrated_hr instead.
     pub fn value_calibrated(&self) -> Result<i32, AdiError> {
         Ok(unsafe { bail_on!(PROS_ERR, pros_sys::adi_analog_read_calibrated(self.port)) })
     }
 
     /// Reads the calibrated value of an analog input channel 1-8 with enhanced precision.
     ///
-    /// The adi_analog_calibrate function must be run first.
+    /// The calibrate function must be run first.
     /// 
     /// This is intended for integrated sensor values such as gyros and accelerometers
     /// to reduce drift due to round-off, and should not be used on a sensor such as a
