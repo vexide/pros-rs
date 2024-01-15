@@ -1,7 +1,6 @@
 use crate::adi::{
     AdiError,
-    AdiSlot,
-    New
+    AdiSlot
 };
 
 use crate::error::bail_on;
@@ -13,22 +12,6 @@ pub struct AdiAnalogIn {
 }
 
 impl AdiAnalogIn {
-    /// Create an AdiAnalogIn without checking if it is valid.
-    /// 
-    /// # Safety
-    /// 
-    /// The port must be above 0 and below [`pros_sys::NUM_ADI_PORTS`].
-    pub fn new_unchecked(slot: AdiSlot) -> Self {
-        Self {
-            port: slot as u8
-        }
-    }
-    
-    /// Create an AdiAnalogIn, panicking if the port is invalid.
-    pub fn new_raw(slot: AdiSlot) -> Self {
-        Self::new(slot).unwrap()
-    }
-
     /// Create an AdiAnalogIn, returning err `AdiError::InvalidPort` if the port is invalid.
     pub fn new(slot: AdiSlot) -> Result<Self, AdiError> {
         let port = slot as u8;
@@ -91,41 +74,11 @@ impl AdiAnalogIn {
     }
 }
 
-impl New for AdiAnalogIn {
-    fn new(slot: AdiSlot) -> Result<Self, AdiError> {
-        Self::new(slot)
-    }
-
-    fn new_raw(slot: AdiSlot) -> Self {
-        Self::new_raw(slot)
-    }
-
-    fn new_unchecked(slot: AdiSlot) -> Self {
-        Self::new_unchecked(slot)
-    }
-}
-
 pub struct AdiAnalogOut {
     port: u8,
 }
 
 impl AdiAnalogOut {
-    /// Create an AdiAnalogOut without checking if it is valid.
-    /// 
-    /// # Safety
-    /// 
-    /// The port must be above 0 and below [`pros_sys::NUM_ADI_PORTS`].
-    pub fn new_unchecked(slot: AdiSlot) -> Self {
-        Self {
-            port: slot as u8
-        }
-    }
-
-    /// Create an AdiAnalogOut, panicking if the port is invalid.
-    pub fn new_raw(slot: AdiSlot) -> Self {
-        Self::new(slot).unwrap()
-    }
-
     /// Create an AdiAnalogOut, returning err `AdiError::InvalidPort` if the port is invalid.
     pub fn new(slot: AdiSlot) -> Result<Self, AdiError> {
         let port = slot as u8;
@@ -141,19 +94,5 @@ impl AdiAnalogOut {
             PROS_ERR,
             unsafe { pros_sys::adi_port_set_value(self.port, value) }
         }})
-    }
-}
-
-impl New for AdiAnalogOut {
-    fn new(slot: AdiSlot) -> Result<Self, AdiError> {
-        Self::new(slot)
-    }
-
-    fn new_raw(slot: AdiSlot) -> Self {
-        Self::new_raw(slot)
-    }
-
-    fn new_unchecked(slot: AdiSlot) -> Self {
-        Self::new_unchecked(slot)
     }
 }

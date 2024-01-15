@@ -1,7 +1,6 @@
 use crate::adi::{
     AdiError,
-    AdiSlot,
-    New
+    AdiSlot
 };
 
 use core::ffi::c_double;
@@ -56,19 +55,5 @@ impl AdiGyro {
     /// Gets the current gyro angle in tenths of a degree. Unless a multiplier is applied to the gyro, the return value will be a whole number representing the number of degrees of rotation times 10.
     pub fn reset(&self) -> Result<i32, AdiError> {
         Ok(unsafe { bail_on!(PROS_ERR.into(), pros_sys::adi_gyro_reset(self.reference)) })
-    }
-}
-
-impl New for AdiGyro {
-    fn new(slot: AdiSlot) -> Result<Self, AdiError> {
-        unsafe { Self::new(slot, 1.0) }
-    }
-
-    fn new_raw(slot: AdiSlot) -> Self {
-        unsafe { Self::new_raw(slot, 1.0) }
-    }
-
-    fn new_unchecked(slot: AdiSlot) -> Self {
-        Self::new_unchecked(slot, 1.0)
     }
 }

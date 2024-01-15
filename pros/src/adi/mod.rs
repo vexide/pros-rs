@@ -66,9 +66,3 @@ pub enum AdiSlot {
     G = 7,
     H = 8,
 }
-
-pub trait New {
-    fn new(slot: AdiSlot) -> Result<Self, AdiError> where Self: Sized;
-    fn new_raw(slot: AdiSlot) -> Self;
-    fn new_unchecked(slot: AdiSlot) -> Self;
-}

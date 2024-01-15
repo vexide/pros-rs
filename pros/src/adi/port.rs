@@ -6,8 +6,7 @@ use core::{
 
 use crate::adi::{
     AdiError,
-    AdiSlot,
-    New
+    AdiSlot
 };
 
 use crate::error::bail_on;
@@ -17,31 +16,14 @@ use pros_sys::{PROS_ERR, adi_port_config_e_t, E_ADI_DIGITAL_IN, E_ADI_ANALOG_OUT
 pub struct AdiPort(u8);
 
 impl AdiPort {
-    /// Create an AdiPort without checking if it is valid.
-    ///
-    /// # Safety
-    ///
-    /// The port must be above 0 and below [`pros_sys::NUM_ADI_PORTS`].
-    pub fn new_unchecked(port: AdiSlot) -> Self {
-        Self(port as u8)
-    }
-
     /// Create an AdiPort, returning err `AdiError::InvalidPort` if the port is invalid.
-    pub fn try_new(slot: AdiSlot) -> Option<Self> {
+    pub fn new(slot: AdiSlot) -> Option<Self> {
         let port = slot as u8;
         if c_int::from(port) < pros_sys::NUM_ADI_PORTS && c_int::from(port) > 0 {
             Some(Self(port))
         } else {
             None
         }
-    }
-    /// Create an AdiPort.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the port is greater than or equal to [`pros_sys::NUM_ADI_PORTS`].
-    pub fn new(port: AdiSlot) -> Self {
-        Self::try_new(port).expect("Invalid ADI port")
     }
 
     /// Sets the value for the given ADI port
@@ -97,19 +79,5 @@ impl Deref for AdiPort {
 impl DerefMut for AdiPort {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
-    }
-}
-
-impl New for AdiPort {
-    fn new(slot: AdiSlot) -> Result<Self, AdiError> {
-        Self::try_new(slot).ok_or(AdiError::InvalidPort)
-    }
-
-    fn new_raw(slot: AdiSlot) -> Self {
-        Self::new(slot)
-    }
-
-    fn new_unchecked(slot: AdiSlot) -> Self {
-        Self::new_unchecked(slot)
     }
 }
