@@ -34,16 +34,19 @@ pub fn status() -> CompetitionStatus {
 }
 
 /// Check if the robot is in autonomous mode.
+#[deprecate_until(remove = ">= 0.7", note = "use `status().autonomous()` instead")]
 pub fn is_autonomous() -> bool {
     status().autonomous()
 }
 
 /// Check if the robot is disabled.
+#[deprecate_until(remove = ">= 0.7", note = "use `status().disabled()` instead")]
 pub fn is_disabled() -> bool {
     status().disabled()
 }
 
 /// Check if the robot is connected to a VEX field or competition switch.
+#[deprecate_until(remove = ">= 0.7", note = "use `status().connected()` instead")]
 pub fn is_connected() -> bool {
     status().connected()
 }
