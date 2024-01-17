@@ -10,6 +10,8 @@ impl AsyncRobot for Robot {
     async fn opcontrol(&mut self) -> pros::Result {
         println!("basic example");
 
+        Motor::new(25, BrakeMode::None).unwrap();
+
         Ok(())
     }
 }

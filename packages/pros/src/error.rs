@@ -27,8 +27,8 @@ pub(crate) fn take_errno() -> i32 {
 macro_rules! map_errno {
     {
         $err_ty:ty { $($errno:pat => $err:expr),*$(,)? }
+        unknown = $unknown:expr;
         $(inherit $base:ty;)?
-        $(unknown = $unknown:expr;)?
     } => {
         impl $crate::error::FromErrno for $err_ty {
             fn try_from_errno(num: i32) -> Option<Self> {
@@ -47,24 +47,9 @@ macro_rules! map_errno {
                     _ => None,
                 }
             }
-            #[allow(unused, clippy::redundant_closure_call)]
-            fn unknown_variant(num: i32) -> Option<Self> {
-                $(
-                    if let Some(variant) = <$base as $crate::error::FromErrno>::unknown_variant(num) {
-                        return Some(variant.into());
-                    }
-                )?
-                #[allow(unused_mut)]
-                let mut variant = None;
-                $(
-                    variant = Some($unknown(num));
-                )?
-                variant
-            }
-            fn from_errno(num: i32) -> Self {
-                Self::try_from_errno(num)
-                    .unwrap_or_else(|| Self::unknown_variant(num)
-                        .unwrap_or_else(|| panic!("Unknown errno code {num}")))
+            #[allow(clippy::redundant_closure_call)]
+            fn unknown_variant(num: i32) -> Self {
+                $unknown(num)
             }
         }
     }
@@ -106,20 +91,26 @@ pub trait FromErrno {
     where
         Self: Sized;
     /// The variant to return if the errno value is unknown.
-    fn unknown_variant(num: i32) -> Option<Self>
+    fn unknown_variant(num: i32) -> Self
     where
-        Self: Sized;
+        Self: Sized,
+    {
+        panic!("Unknown errno code {num}")
+    }
     /// Consume the current `errno` and returns Self.
     /// If the error is unknown, returns the result of [`Self::unknown_variant`].
     fn from_errno(num: i32) -> Self
     where
-        Self: Sized;
+        Self: Sized,
+    {
+        Self::try_from_errno(num).unwrap_or_else(|| Self::unknown_variant(num))
+    }
 }
 
 #[derive(Debug, Snafu)]
 pub enum PortError {
-    #[snafu(display("The port you specified is outside of the allowed range!"))]
-    PortOutOfRange,
+    // #[snafu(display("The port you specified is outside of the allowed range!"))]
+    // PortOutOfRange,
     #[snafu(display(
         // used to have "Is something else plugged in?" But the vex radio (link) uses the same errno, so that's not always applicable.
         "The port you specified couldn't be configured the requested smart device type."
@@ -129,10 +120,13 @@ pub enum PortError {
     Unknown { source: ErrnoError },
 }
 
-map_errno!(PortError {
-    ENXIO => Self::PortOutOfRange,
-    ENODEV => Self::PortCannotBeConfigured,
-});
+map_errno! {
+    PortError {
+        // ENXIO => Self::PortOutOfRange,
+        ENODEV => Self::PortCannotBeConfigured,
+    }
+    inherit ErrnoError;
+}
 
 #[derive(Debug, Snafu)]
 #[snafu(display("An unknown error occurred (errno {errno})."))]
