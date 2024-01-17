@@ -93,10 +93,7 @@ pub trait FromErrno {
     /// The variant to return if the errno value is unknown.
     fn unknown_variant(num: i32) -> Self
     where
-        Self: Sized,
-    {
-        panic!("Unknown errno code {num}")
-    }
+        Self: Sized;
     /// Consume the current `errno` and returns Self.
     /// If the error is unknown, returns the result of [`Self::unknown_variant`].
     fn from_errno(num: i32) -> Self
