@@ -30,6 +30,7 @@ Before releasing:
 - Various types from the `no_std_io` have are re-exported from this module to provide missing functionality from `std`. (#30)
 - Macros for printing to stdout (`println`, `print`, `eprintln`, etc...) (#30)
 - All ADI device bindings (#55)
+- Added `Unknown` variant to `PortError` for unknown `errno` values. (#43)
 
 ### Fixed
 
@@ -37,6 +38,7 @@ Before releasing:
 - Fixed error handling in IMU sensor bindings. (#37)
 - Fixed errors in doctests and examples throughout the crate. (#37)
 - Fixed Missing ERRNO and ADI config variants in pros-sys (#55)
+- Unknown `errno` values will no longer crash the program. (**Breaking change**) (#43)
 
 ### Changed
 

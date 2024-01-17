@@ -129,8 +129,7 @@ impl TxLink {
         match unsafe { link_transmit(self.port, buf.as_ptr().cast(), buf.len() as _) } {
             PROS_ERR_U32 => {
                 let errno = crate::error::take_errno();
-                Err(FromErrno::from_errno(errno)
-                    .unwrap_or_else(|| panic!("Unknown errno code {errno}")))
+                Err(FromErrno::from_errno(errno))
             }
             0 => Err(LinkError::Busy),
             n => Ok(n),
