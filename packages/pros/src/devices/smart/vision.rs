@@ -22,11 +22,11 @@ pub struct VisionSensor {
 
 impl VisionSensor {
     /// Creates a new vision sensor.
-    pub fn new(port: SmartPort, zero: VisionZeroPoint) -> Result<Self, VisionError> {
+    pub fn new(port: SmartPort, origin: VisionOriginPoint) -> Result<Self, VisionError> {
         unsafe {
             bail_on!(
                 PROS_ERR,
-                pros_sys::vision_set_zero_point(port.index(), zero as _)
+                pros_sys::vision_set_zero_point(port.index(), origin as _)
             );
         }
 
@@ -107,9 +107,9 @@ impl VisionSensor {
     }
 
     /// Sets the point that object positions are relative to, in other words where (0, 0) is or the zero point.
-    pub fn set_zero_point(&mut self, zero: VisionZeroPoint) {
+    pub fn set_zero_point(&mut self, origin: VisionOriginPoint) {
         unsafe {
-            pros_sys::vision_set_zero_point(self.port.index(), zero as _);
+            pros_sys::vision_set_zero_point(self.port.index(), origin as _);
         }
     }
 
@@ -134,6 +134,87 @@ impl SmartDevice for VisionSensor {
 
     fn device_type(&self) -> SmartDeviceType {
         SmartDeviceType::Vision
+    }
+}
+
+pub struct VisionSignature {
+    /// The signature id.
+    id: u32,
+
+    /// The signature minimum value on the u axis.
+    u_min: u32,
+
+    /// The signature maximum value on the u axis.
+    u_max: u32,
+
+    /// The signature mean value on the u axis.
+    u_mean: u32,
+
+    /// The signature minimum value on the v axis.
+    v_min: u32,
+
+    /// The signature maximum value on the v axis.
+    v_max: u32,
+
+    /// The signature mean value on the v axis.
+    v_mean: u32,
+
+    /// The signature range scale factor.
+    range: f32,
+
+    /// The signature type, normal or color code.
+    signature_type: i32,
+}
+
+impl VisionSignature {
+    pub fn new(
+        id: u32,
+        u_min: u32,
+        u_max: u32,
+        u_mean: u32,
+        v_min: u32,
+        v_max: u32,
+        v_mean: u32,
+        range: f32,
+        signature_type: i32,
+    ) -> Self {
+        Self {
+            id,
+            u_min,
+            u_max,
+            u_mean,
+            v_min,
+            v_max,
+            v_mean,
+            range,
+            signature_type,
+        }
+    }
+}
+
+pub struct VisionCode {
+    sig_1: VisionSignature,
+    sig_2: VisionSignature,
+    sig_3: Option<VisionSignature>,
+    sig_4: Option<VisionSignature>,
+    sig_5: Option<VisionSignature>,
+}
+
+impl VisionCode {
+    fn new(
+        sig_1: VisionSignature,
+        sig_2: VisionSignature,
+        sig_3: Option<VisionSignature>,
+        sig_4: Option<VisionSignature>,
+        sig_5: Option<VisionSignature>,
+    ) -> Self {
+        Self {
+            sig_1,
+            sig_2,
+            sig_3,
+            sig_4,
+            sig_5,
+        }
     }
 }
 
@@ -222,7 +303,7 @@ impl From<LcdColor> for Rgb {
 
 #[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum VisionZeroPoint {
+pub enum VisionOriginPoint {
     TopLeft,
     Center,
 }
