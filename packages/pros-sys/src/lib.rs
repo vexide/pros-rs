@@ -20,6 +20,7 @@ pub mod motor;
 pub mod optical;
 pub mod rotation;
 pub mod rtos;
+pub mod serial;
 pub mod vision;
 
 use core::ffi::{c_char, c_int, c_void};
@@ -38,11 +39,8 @@ pub use motor::*;
 pub use optical::*;
 pub use rotation::*;
 pub use rtos::*;
-#[cfg(feaute = "apix")]
 pub use serial::*;
 pub use vision::*;
-#[cfg(feaute = "apix")]
-pub mod serial;
 
 pub const CLOCKS_PER_SEC: u32 = 1000;
 

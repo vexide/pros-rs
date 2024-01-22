@@ -21,6 +21,7 @@ pub mod link;
 pub mod motor;
 pub mod optical;
 pub mod rotation;
+pub mod serial;
 pub mod vision;
 
 pub use distance::DistanceSensor;
@@ -30,6 +31,7 @@ pub use link::{Link, RxLink, TxLink};
 pub use motor::Motor;
 pub use optical::OpticalSensor;
 pub use rotation::RotationSensor;
+pub use serial::SerialPort;
 pub use vision::VisionSensor;
 
 use crate::{error::bail_on, prelude::PortError};

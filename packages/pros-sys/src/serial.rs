@@ -194,5 +194,5 @@ extern "C" {
      \return The number of bytes written or PROS_ERR if the operation failed,
      setting errno.
     */
-    pub fn serial_write(port: u8, buffer: *mut u8, length: i32) -> i32;
+    pub fn serial_write(port: u8, buffer: *const u8, length: i32) -> i32;
 }
