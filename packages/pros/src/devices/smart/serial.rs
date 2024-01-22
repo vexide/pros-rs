@@ -38,7 +38,7 @@ impl SerialPort {
 
     fn transmit(&mut self, buf: &[u8]) -> Result<usize, SerialError> {
         Ok(bail_on!(PROS_ERR, unsafe {
-            pros_sys::serial_write(self.port.index(), buf.as_ptr(), buf.len() as i32)
+            pros_sys::serial_write(self.port.index(), buf.as_ptr() as *mut u8, buf.len() as i32)
         }) as usize)
     }
 
