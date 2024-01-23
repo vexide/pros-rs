@@ -3,9 +3,8 @@
 //! Vision sensors take in a zero point at creation.
 
 extern crate alloc;
-use core::num::NonZeroU8;
-
 use alloc::vec::Vec;
+use core::num::NonZeroU8;
 
 use pros_sys::{PROS_ERR, VISION_OBJECT_ERR_SIG};
 use snafu::Snafu;
@@ -75,9 +74,21 @@ impl VisionSensor {
                 self.port.index(),
                 code.sig_1.id.get() as u32,
                 code.sig_2.id.get() as u32,
-                if let Some(sig_3) = code.sig_3 { sig_3.id.get() } else { 0 } as u32,
-                if let Some(sig_4) = code.sig_4 { sig_4.id.get() } else { 0 } as u32,
-                if let Some(sig_5) = code.sig_5 { sig_5.id.get() } else { 0 } as u32,
+                if let Some(sig_3) = code.sig_3 {
+                    sig_3.id.get()
+                } else {
+                    0
+                } as u32,
+                if let Some(sig_4) = code.sig_4 {
+                    sig_4.id.get()
+                } else {
+                    0
+                } as u32,
+                if let Some(sig_5) = code.sig_5 {
+                    sig_5.id.get()
+                } else {
+                    0
+                } as u32,
             )
         });
 
@@ -279,7 +290,8 @@ impl TryFrom<pros_sys::vision_signature_s_t> for VisionSignature {
 
     fn try_from(value: pros_sys::vision_signature_s_t) -> Result<Self, VisionError> {
         Ok(Self {
-            id: NonZeroU8::new(bail_on!(VISION_OBJECT_ERR_SIG as u8, value.id)).expect("Vision signature IDs must not be 0"),
+            id: NonZeroU8::new(bail_on!(VISION_OBJECT_ERR_SIG as u8, value.id))
+                .expect("Vision signature IDs must not be 0"),
             u_threshold: (value.u_min, value.u_max, value.u_mean),
             v_threshold: (value.v_min, value.v_max, value.v_mean),
             range: value.range,
@@ -570,9 +582,7 @@ pub enum VisionError {
         "The index specified was higher than the total number of objects seen by the camera."
     ))]
     IndexTooHigh,
-    #[snafu(display(
-        "The given signature ID or argument is out of range."
-    ))]
+    #[snafu(display("The given signature ID or argument is out of range."))]
     InvalidIdentifier,
     #[snafu(display("The camera could not be read."))]
     ReadingFailed,
