@@ -34,3 +34,13 @@ waker-fn = "1.1.1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 dlmalloc = { version = "0.2.4", features = ["global"] }
+
+[profile.dev]
+strip = true
+opt-level = "z"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+opt-level = "z"

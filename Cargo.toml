@@ -1,3 +1,13 @@
 [workspace]
 members = ["packages/*"]
 resolver = "2"
+
+[profile.dev]
+strip = true
+opt-level = "z"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+opt-level = "z"
