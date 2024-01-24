@@ -55,7 +55,15 @@ pub struct VisionSensor {
 }
 
 impl VisionSensor {
-    /// Creates a new vision sensor on a smart port.
+    /// Creates a new vision sensor on a smart port using a provided origin point for the sensor's
+    /// object coordinates.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    /// ```
     pub fn new(port: SmartPort, origin_point: VisionOriginPoint) -> Result<Self, VisionError> {
         bail_on!(PROS_ERR, unsafe {
             pros_sys::vision_set_zero_point(port.index(), origin_point as pros_sys::vision_zero_e_t)
@@ -68,18 +76,40 @@ impl VisionSensor {
     }
 
     /// Adds a detection signature to the sensor's onboard memory. This signature will be used to
-    /// identify objects when using [`Self::objects`].
+    /// identify objects when using [`objects`].
     ///
     /// The sensor can store up to 7 unique signatures, with each signature slot denoted by the
     /// [`VisionSignature::id`] field. If a signature with an ID matching an existing signature
     /// on the sensor is added, then the existing signature will be overwritten with the new one.
+    ///
+    /// [`objects`]: VisionSensor::objects
     ///
     /// # Volatile Memory
     ///
     /// The memory on the Vision Sensor is *volatile* and will therefore be wiped when the sensor
     /// loses power. As a result, this function should be called every time the sensor is used on
     /// program start.
-    pub fn add_signature(&self, signature: VisionSignature) -> Result<(), VisionError> {
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    ///
+    /// // Register a signature for detecting red objects.
+    /// // This signature was generated using VEX's vision utility app.
+    /// let signature = VisionSignature::new(
+    ///     NonZeroU8::new(1).unwrap(),
+    ///     (10049, 11513, 10781),
+    ///     (-425, 1, -212),
+    ///     4.1,
+    ///     VisionSignatureType::Normal,
+    /// );
+    ///
+    /// // Store the signature on our sensor.
+    /// sensor.add_signature(signature)?;
+    /// ```
+    pub fn add_signature(&mut self, signature: VisionSignature) -> Result<(), VisionError> {
         bail_on!(PROS_ERR, unsafe {
             pros_sys::vision_set_signature(self.port.index(), signature.id.get(), &signature.into())
         });
@@ -88,17 +118,48 @@ impl VisionSensor {
     }
 
     /// Adds a color code to the sensor's onboard memory. This code will be used to identify objects
-    /// when using [`Self::objects`].
+    /// when using [`objects`].
     ///
     /// Color codes are effectively "signature groups" that the sensor will use to identify objects
     /// containing the color of their signatures next to each other.
+    ///
+    /// [`objects`]: VisionSensor::objects
     ///
     /// # Volatile Memory
     ///
     /// The onboard memory of the Vision Sensor is *volatile* and will therefore be wiped when the
     /// sensor loses its power source. As a result, this function should be called every time the
     /// sensor is used on program start.
-    pub fn add_code(&self, code: VisionCode) -> Result<(), VisionError> {
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    ///
+    /// // Make some signatures.
+    /// let sig1 = VisionSignature::new(
+    ///     NonZeroU8::new(1).unwrap(),
+    ///     (10049, 11513, 10781),
+    ///     (-425, 1, -212),
+    ///     4.1,
+    ///     VisionSignatureType::Normal,
+    /// );
+    /// let sig2 = VisionSignature::new(
+    ///     NonZeroU8::new(2).unwrap(),
+    ///     (-715,-291, -503),
+    ///     (-4109, -3709, -3909),
+    ///     5.7,
+    ///     VisionSignatureType::Normal,
+    /// );
+    ///
+    /// // Merge our two signatures into a single code.
+    /// let code = VisionCode::new(sig1, sig2, None, None, None);
+    ///
+    /// // Store the code on our sensor.
+    /// sensor.add_code(code)?;
+    /// ```
+    pub fn add_code(&mut self, code: VisionCode) -> Result<(), VisionError> {
         _ = bail_on!(VISION_OBJECT_ERR_SIG, unsafe {
             pros_sys::vision_create_color_code(
                 self.port.index(),
@@ -128,6 +189,16 @@ impl VisionSensor {
     /// Get the current exposure percentage of the vision sensor.
     ///
     /// The returned result should be within 0.0 to 1.5.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    ///
+    /// // Print the current expsure of the sensor.
+    /// println!("{}", sensor.exposure()?);
+    /// ```
     pub fn exposure(&self) -> Result<f32, VisionError> {
         Ok(bail_on!(PROS_ERR, unsafe {
             pros_sys::vision_get_exposure(self.port.index())
@@ -137,7 +208,17 @@ impl VisionSensor {
     }
 
     /// Get the current white balance of the vision sensor as an RGB color.
-    pub fn current_white_balance(&self) -> Result<Rgb, VisionError> {
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    ///
+    /// // Print the current white balance of the sensor.
+    /// println!("{}", sensor.white_balance()?);
+    /// ```
+    pub fn white_balance(&self) -> Result<Rgb, VisionError> {
         Ok((bail_on!(PROS_ERR, unsafe {
             pros_sys::vision_get_white_balance(self.port.index())
         }) as u32)
@@ -145,6 +226,16 @@ impl VisionSensor {
     }
 
     /// Sets the exposure percentage of the vision sensor. Should be between 0.0 and 1.5.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    ///
+    /// // Set the sensor's exposure to half of its maximum value.
+    /// sensor.set_exposure(0.75)?;
+    /// ```
     pub fn set_exposure(&mut self, exposure: f32) -> Result<(), VisionError> {
         bail_on!(PROS_ERR, unsafe {
             pros_sys::vision_set_exposure(self.port.index(), (exposure * 150.0 / 1.5) as u8)
@@ -156,6 +247,16 @@ impl VisionSensor {
     /// Sets the white balance of the vision sensor.
     ///
     /// White balance can be either automatically set or manually set through an RGB color.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    ///
+    /// // Set the sensor's white balance to automatic mode.
+    /// sensor.set_white_balance(WhiteBalance::Auto)?;
+    /// ```
     pub fn set_white_balance(&mut self, white_balance: WhiteBalance) -> Result<(), VisionError> {
         match white_balance {
             WhiteBalance::Auto => {
@@ -186,6 +287,16 @@ impl VisionSensor {
     ///
     /// The default behavior is represented by [`LedMode::Auto`], which will display the color of the most prominent
     /// detected object's signature color. Alternatively, the LED can be configured to display a single RGB color.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    ///
+    /// // Make the LED red!
+    /// sensor.set_led_mode(LedMode::Manual(Rgb::new(255, 0, 0)))?;
+    /// ```
     pub fn set_led_mode(&mut self, mode: LedMode) -> Result<(), VisionError> {
         match mode {
             LedMode::Auto => bail_on!(PROS_ERR, unsafe {
@@ -201,6 +312,17 @@ impl VisionSensor {
     /// Sets the point that object positions are relative to.
     ///
     /// In other words, this function will change where (0, 0) is located in the sensor's coordinate system.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// // We'll set the origin point to top left for now.
+    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    ///
+    /// // Change the origin point to the center of the sensor's FOV
+    /// sensor.set_origin_point(VisionOriginPoint::Center)?;
+    /// ```
     pub fn set_origin_point(&mut self, origin: VisionOriginPoint) -> Result<(), VisionError> {
         bail_on!(PROS_ERR, unsafe {
             pros_sys::vision_set_zero_point(self.port.index(), origin as _)
@@ -211,11 +333,48 @@ impl VisionSensor {
         Ok(())
     }
 
+    /// Gets the origin point that object positions are relative to.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// // We'll set the origin point to top left for now.
+    /// let sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    ///
+    /// // Get the origin point we passed to the sensor on construction (the top left).
+    /// assert_eq!(sensor.origin_point(), Ok(VisionOriginPoint::TopLeft));
+    /// ```
     pub fn origin_point(&self) -> VisionOriginPoint {
         self.origin_point
     }
 
     /// Gets a list of objects detected by the sensor ordered from largest to smallest in size.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    ///
+    /// // Create and add a vision signature for object detection
+    /// let my_signature = VisionSignature::new(
+    ///     NonZeroU8::new(1).unwrap(),
+    ///     (10049, 11513, 10781),
+    ///     (-425, 1, -212),
+    ///     4.1,
+    ///     VisionSignatureType::Normal,
+    /// );
+    /// sensor.add_signature(my_signature)?;
+    ///
+    /// // Get all of the objects detected by our sensor matching the signature we gave it.
+    /// let objects = sensor.objects()?;
+    ///
+    /// // Print the size and position of all the objects we found.
+    /// for object in objects {
+    ///     println!("X: {}, Y: {}, W: {}, H: {}", object.x, object.y, object.width, object.height);
+    /// }
+    /// ```
     pub fn objects(&self) -> Result<Vec<VisionObject>, VisionError> {
         let object_count = self.object_count()?;
         let mut objects = Vec::with_capacity(object_count);
@@ -236,6 +395,29 @@ impl VisionSensor {
     }
 
     /// Returns the number of objects detected by the sensor.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    ///
+    /// // Create and add a vision signature for object detection
+    /// let my_signature = VisionSignature::new(
+    ///     NonZeroU8::new(1).unwrap(),
+    ///     (10049, 11513, 10781),
+    ///     (-425, 1, -212),
+    ///     4.1,
+    ///     VisionSignatureType::Normal,
+    /// );
+    /// sensor.add_signature(my_signature)?;
+    ///
+    /// // Get all of the objects detected by our sensor matching the signature we gave it.
+    /// let num_objects = sensor.object_count()?;
+    ///
+    /// // Print the amount of objects we found to console.
+    /// println!("Detected {} objects.", num_objects);
+    /// ```
     pub fn object_count(&self) -> Result<usize, VisionError> {
         Ok(bail_on!(PROS_ERR, unsafe {
             pros_sys::vision_get_object_count(self.port.index())
@@ -257,7 +439,9 @@ impl SmartDevice for VisionSensor {
 ///
 /// Vision signatures contain information used by the vision sensor to detect objects of a certain
 /// color. These signatures are typically generated through VEX's vision utility tool rather than
-/// written by hand. For creating signatures using the utility, see [`Self::from_utility`].
+/// written by hand. For creating signatures using the utility, see [`from_utility`].
+///
+/// [`from_utility`]: VisionSignature::from_utility
 ///
 /// # Format & Detection Overview
 ///
@@ -309,6 +493,21 @@ pub struct VisionSignature {
 }
 
 impl VisionSignature {
+    /// Create a [`VisionSignature`].
+    ///
+    /// # Examples
+    ///
+    /// ````
+    /// // Register a signature for detecting red objects.
+    /// // This numbers in this signature was generated using VEX's vision utility app.
+    /// let my_signature = VisionSignature::new(
+    ///     NonZeroU8::new(1).unwrap(),
+    ///     (10049, 11513, 10781),
+    ///     (-425, 1, -212),
+    ///     4.1,
+    ///     VisionSignatureType::Normal,
+    /// );
+    /// ````
     pub fn new(
         id: NonZeroU8,
         u_threshold: (i32, i32, i32),
@@ -325,6 +524,21 @@ impl VisionSignature {
         }
     }
 
+    /// Create a [`VisionSignature`] using the same format as VEX's Vision Utility tool.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the provided `id` is equal to 0. Signature IDs are internally stored as
+    /// [`NonZeroU8`], and the IDs given by Vision Utility should always be from 1-7.
+    ///
+    /// # Examples
+    ///
+    /// ````
+    /// // Register a signature for detecting red objects.
+    /// // This numbers in this signature was generated using VEX's vision utility app.
+    /// let my_signature =
+    ///     VisionSignature::from_utility(1, 10049, 11513, 10781, -425, 1, -212, 4.1, 0);
+    /// ````
     pub fn from_utility(
         id: u8,
         u_min: i32,
@@ -630,6 +844,13 @@ pub struct Rgb {
 }
 
 impl Rgb {
+    /// Creates a new [`Rgb`] color from an R, G, and B component.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let lavender = Rgb::new(230, 230, 250);
+    /// ```
     pub fn new(r: u8, g: u8, b: u8) -> Self {
         Self { r, g, b }
     }
