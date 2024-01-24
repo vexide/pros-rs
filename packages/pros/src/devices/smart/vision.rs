@@ -1,10 +1,27 @@
-//! Vision sensor device.
+//! Vision sensor device module.
 //!
-//! Vision sensors take in a zero point at creation.
+//! This module provides an interface for interacting with the VEX Vision Sensor.
+//!
+//! # Hardware Overview
+//!
+//! The VEX Vision Sensor is a device powered by a standalone ARM Cortex M4+M0 processor
+//! and color camera for the purpose of performing object recognition. The sensor can be
+//! trained to locate objects by color. The camera module itself is very similar internally
+//! to the Pixy2 camera, and performs its own onboard image processing. Manually processing
+//! raw image data from the sensor is not currently possible.
+//!
+//! Every 200 milliseconds, the camera provides a list of the objects found matching up
+//! to seven unique [`VisionSignature`]s. The object’s height, width, and location is provided.
+//! Multi-colored objects may also be programmed through the use of [`ColorCode`]s.
+//!
+//! The Vision Sensor has USB for a direct connection to a computer, where it can be configured
+//! using VEX's proprietary vision utility tool to generate color signatures. The Vision Sensor
+//! also has WiFi Direct and can act as web server, allowing a live video feed of the camera
+//! from any computer equipped with a browser and WiFi.
 
 extern crate alloc;
 use alloc::vec::Vec;
-use core::num::NonZeroU8;
+use core::{num::NonZeroU8, time::Duration};
 
 use pros_sys::{PROS_ERR, VISION_OBJECT_ERR_SIG};
 use snafu::Snafu;
@@ -15,8 +32,18 @@ use crate::{
     lvgl::colors::LcdColor,
 };
 
-pub const VISION_FOV_WIDTH: u16 = 316;
-pub const VISION_FOV_HEIGHT: u16 = 212;
+/// The horizontal resolution of the vision sensor.
+///
+/// This value is based on the `VISION_FOV_WIDTH` macro constant in PROS.
+pub const VISION_RESOLUTION_WIDTH: u16 = 316;
+
+/// The vertical resolution of the vision sensor.
+///
+/// This value is based on the `VISION_FOV_HEIGHT` macro constant in PROS.
+pub const VISION_RESOLUTION_HEIGHT: u16 = 212;
+
+/// The update rate of the vision sensor.
+pub const VISION_UPDATE_RATE: Duration = Duration::from_millis(50);
 
 /// VEX Vision Sensor
 ///
@@ -30,12 +57,9 @@ pub struct VisionSensor {
 impl VisionSensor {
     /// Creates a new vision sensor on a smart port.
     pub fn new(port: SmartPort, origin_point: VisionOriginPoint) -> Result<Self, VisionError> {
-        unsafe {
-            bail_on!(
-                PROS_ERR,
-                pros_sys::vision_set_zero_point(port.index(), origin_point as _)
-            );
-        }
+        bail_on!(PROS_ERR, unsafe {
+            pros_sys::vision_set_zero_point(port.index(), origin_point as pros_sys::vision_zero_e_t)
+        });
 
         Ok(Self {
             port,
