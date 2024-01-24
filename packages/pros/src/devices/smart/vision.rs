@@ -419,6 +419,26 @@ impl VisionSensor {
             pros_sys::vision_get_object_count(self.port.index())
         }) as usize)
     }
+
+    /// Enables or disables the sensor's onboard Wi-Fi hotspot for streaming
+    /// camera data over a webserver.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    ///
+    /// // Enable Wi-Fi
+    /// sensor.set_wifi_enabled(true)?;
+    /// ```
+    pub fn set_wifi_enabled(&self, enabled: bool) -> Result<(), VisionError> {
+        bail_on!(PROS_ERR, unsafe {
+            pros_sys::vision_set_wifi_mode(self.port.index(), enabled as u8)
+        });
+
+        Ok(())
+    }
 }
 
 impl SmartDevice for VisionSensor {
@@ -643,8 +663,8 @@ type FiveSignatures = (
 impl VisionCode {
     /// Creates a new vision code.
     ///
-    /// Two signatures are require to create a vision code, while the other three
-    /// are optional.
+    /// Two signatures are required to create a vision code, with an additional three
+    /// optional signatures.
     pub fn new(
         sig_1: VisionSignature,
         sig_2: VisionSignature,
