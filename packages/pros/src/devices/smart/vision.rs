@@ -33,7 +33,7 @@ use crate::{
 };
 
 /// The horizontal resolution of the vision sensor.
-///f
+///
 /// This value is based on the `VISION_FOV_WIDTH` macro constant in PROS.
 pub const VISION_RESOLUTION_WIDTH: u16 = 316;
 
