@@ -478,7 +478,7 @@ impl SmartDevice for VisionSensor {
 /// edge detection should be.
 ///
 /// Signatures can additionally be grouped together into [`VisionCode`]s, which narrow the filter for
-/// object detection by requiring two colors
+/// object detection by requiring two colors.
 pub struct VisionSignature {
     /// The signature id.
     ///
@@ -574,6 +574,7 @@ impl VisionSignature {
         signature_type: u32,
     ) -> Self {
         Self {
+            // TODO: Should we panic here? Should it return a result with a special error case.
             id: NonZeroU8::new(id)
                 .expect("Vision utility produced a signature with an invalid ID of 0."),
             u_threshold: (u_min, u_max, u_mean),
@@ -587,8 +588,10 @@ impl VisionSignature {
 impl TryFrom<pros_sys::vision_signature_s_t> for VisionSignature {
     type Error = VisionError;
 
+    /// Convert a raw [`pros_sys::vision_signature_s_t`] struct to a [`VisionSignature`].
     fn try_from(value: pros_sys::vision_signature_s_t) -> Result<Self, VisionError> {
         Ok(Self {
+            // TODO: Should we panic here? Should it return a result with a special error case.
             id: NonZeroU8::new(bail_on!(VISION_OBJECT_ERR_SIG as u8, value.id))
                 .expect("Vision signature IDs must not be 0"),
             u_threshold: (value.u_min, value.u_max, value.u_mean),
@@ -600,6 +603,12 @@ impl TryFrom<pros_sys::vision_signature_s_t> for VisionSignature {
 }
 
 impl From<VisionSignature> for pros_sys::vision_signature_s_t {
+    /// Convert a [`VisionSignature`] to an underlying [`pros_sys::vision_signature_s_t`].
+    ///
+    /// This method will set the [`rgb`] on the generated struct to `0`, since the
+    /// [`VisionSignature`] struct does not store RGB data for a signature.
+    ///
+    /// [`rgb`]: pros_sys::vision_signature_s_t::rgb
     fn from(value: VisionSignature) -> pros_sys::vision_signature_s_t {
         pros_sys::vision_signature_s_t {
             id: value.id.get(),
@@ -672,6 +681,29 @@ impl VisionCode {
     ///
     /// Two signatures are required to create a vision code, with an additional three
     /// optional signatures.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Make some signatures.
+    /// let sig1 = VisionSignature::new(
+    ///     NonZeroU8::new(1).unwrap(),
+    ///     (10049, 11513, 10781),
+    ///     (-425, 1, -212),
+    ///     4.1,
+    ///     VisionSignatureType::Normal,
+    /// );
+    /// let sig2 = VisionSignature::new(
+    ///     NonZeroU8::new(2).unwrap(),
+    ///     (-715,-291, -503),
+    ///     (-4109, -3709, -3909),
+    ///     5.7,
+    ///     VisionSignatureType::Normal,
+    /// );
+    ///
+    /// // Merge our two signatures into a single code.
+    /// let code = VisionCode::new(sig1, sig2, None, None, None);
+    /// ````
     pub fn new(
         sig_1: VisionSignature,
         sig_2: VisionSignature,
@@ -690,6 +722,7 @@ impl VisionCode {
 }
 
 impl From<TwoSignatures> for VisionCode {
+    /// Convert a tuple of two [`VisionSignatures`] into a [`VisionCode`].
     fn from(signatures: TwoSignatures) -> Self {
         Self {
             sig_1: signatures.0,
@@ -702,6 +735,7 @@ impl From<TwoSignatures> for VisionCode {
 }
 
 impl From<ThreeSignatures> for VisionCode {
+    /// Convert a tuple of three [`VisionSignatures`] into a [`VisionCode`].
     fn from(signatures: ThreeSignatures) -> Self {
         Self {
             sig_1: signatures.0,
@@ -714,6 +748,7 @@ impl From<ThreeSignatures> for VisionCode {
 }
 
 impl From<FourSignatures> for VisionCode {
+    /// Convert a tuple of four [`VisionSignatures`] into a [`VisionCode`].
     fn from(signatures: FourSignatures) -> Self {
         Self {
             sig_1: signatures.0,
@@ -726,6 +761,7 @@ impl From<FourSignatures> for VisionCode {
 }
 
 impl From<FiveSignatures> for VisionCode {
+    /// Convert a tuple of five [`VisionSignatures`] into a [`VisionCode`].
     fn from(signatures: FiveSignatures) -> Self {
         Self {
             sig_1: signatures.0,
@@ -737,26 +773,40 @@ impl From<FiveSignatures> for VisionCode {
     }
 }
 
+/// The type of a vision signature.
+///
+/// Signatures are used to detect objects, and can additionally be associated with each other
+/// to create color codes. This type indicates the type of signature used to detect an object.
 #[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VisionSignatureType {
+    /// A normal vision signature not associated with a color code.
     Normal = pros_sys::E_VISION_OBJECT_NORMAL,
+
+    /// A vision signature associated with a color code.
     ColorCode = pros_sys::E_VISION_OBJECT_COLOR_CODE,
+
+    /// Unknown use.
     Line = pros_sys::E_VISION_OBJECT_LINE,
 }
 
 impl From<VisionSignatureType> for pros_sys::vision_object_type_e_t {
+    /// Convert a [`VisionSignatureType`] to an underlying [`pros_sys::vision_object_type_e_t`].
     fn from(value: VisionSignatureType) -> pros_sys::vision_object_type_e_t {
         value as _
     }
 }
 
 impl From<pros_sys::vision_object_type_e_t> for VisionSignatureType {
+    /// Convert a raw [`pros_sys::vision_object_type_e_t`] into a [`VisionSignatureType`].
     fn from(value: pros_sys::vision_object_type_e_t) -> VisionSignatureType {
         match value {
             pros_sys::E_VISION_OBJECT_NORMAL => Self::Normal,
             pros_sys::E_VISION_OBJECT_COLOR_CODE => Self::ColorCode,
             pros_sys::E_VISION_OBJECT_LINE => Self::Line,
+
+            // PROS gave us an unexpected value in this case.
+            // TODO: Should this be implemented as TryFrom instead?
             _ => unreachable!(),
         }
     }
