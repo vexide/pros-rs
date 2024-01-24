@@ -26,7 +26,7 @@ impl ExampleRobot {
             motor: Arc::new(Mutex::new(
                 Motor::new(peripherals.port_2, BrakeMode::Brake).unwrap(),
             )),
-            vision: VisionSensor::new(peripherals.port_9, VisionOriginPoint::TopLeft).unwrap(),
+            vision: VisionSensor::new(peripherals.port_9),
         }
     }
 }

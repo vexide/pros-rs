@@ -394,7 +394,7 @@ pub mod prelude {
                 optical::OpticalSensor,
                 rotation::RotationSensor,
                 vision::{
-                    VisionCode, VisionOriginPoint, VisionSensor, VisionSignature,
+                    VisionCode, VisionSensor, VisionSignature,
                     VisionSignatureType,
                 },
                 SmartDevice, SmartPort,

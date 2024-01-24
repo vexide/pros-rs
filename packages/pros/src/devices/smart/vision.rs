@@ -51,28 +51,19 @@ pub const VISION_UPDATE_RATE: Duration = Duration::from_millis(50);
 #[derive(Debug, Eq, PartialEq)]
 pub struct VisionSensor {
     port: SmartPort,
-    origin_point: VisionOriginPoint,
 }
 
 impl VisionSensor {
-    /// Creates a new vision sensor on a smart port using a provided origin point for the sensor's
-    /// object coordinates.
+    /// Creates a new vision sensor on a smart port.
     ///
     /// # Examples
     ///
     /// ```
     /// // Register a vision sensor on port 1.
-    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    /// let mut sensor = VisionSensor::new(peripherals.port_1);
     /// ```
-    pub fn new(port: SmartPort, origin_point: VisionOriginPoint) -> Result<Self, VisionError> {
-        bail_on!(PROS_ERR, unsafe {
-            pros_sys::vision_set_zero_point(port.index(), origin_point as pros_sys::vision_zero_e_t)
-        });
-
-        Ok(Self {
-            port,
-            origin_point: origin_point,
-        })
+    pub fn new(port: SmartPort) -> Self {
+        Self { port }
     }
 
     /// Adds a detection signature to the sensor's onboard memory. This signature will be used to
@@ -92,7 +83,7 @@ impl VisionSensor {
     ///
     /// ```
     /// // Register a vision sensor on port 1.
-    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    /// let mut sensor = VisionSensor::new(peripherals.port_1);
     ///
     /// // Register a signature for detecting red objects.
     /// // This signature was generated using VEX's vision utility app.
@@ -131,7 +122,7 @@ impl VisionSensor {
     ///
     /// ```
     /// // Register a vision sensor on port 1.
-    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    /// let mut sensor = VisionSensor::new(peripherals.port_1);
     ///
     /// // Make some signatures.
     /// let sig1 = VisionSignature::new(
@@ -190,7 +181,7 @@ impl VisionSensor {
     ///
     /// ```
     /// // Register a vision sensor on port 1.
-    /// let sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    /// let sensor = VisionSensor::new(peripherals.port_1);
     ///
     /// // Print the current expsure of the sensor.
     /// println!("{}", sensor.exposure()?);
@@ -209,7 +200,7 @@ impl VisionSensor {
     ///
     /// ```
     /// // Register a vision sensor on port 1.
-    /// let sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    /// let sensor = VisionSensor::new(peripherals.port_1);
     ///
     /// // Print the current white balance of the sensor.
     /// println!("{}", sensor.white_balance()?);
@@ -227,7 +218,7 @@ impl VisionSensor {
     ///
     /// ```
     /// // Register a vision sensor on port 1.
-    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    /// let mut sensor = VisionSensor::new(peripherals.port_1);
     ///
     /// // Set the sensor's exposure to half of its maximum value.
     /// sensor.set_exposure(0.75)?;
@@ -248,7 +239,7 @@ impl VisionSensor {
     ///
     /// ```
     /// // Register a vision sensor on port 1.
-    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    /// let mut sensor = VisionSensor::new(peripherals.port_1);
     ///
     /// // Set the sensor's white balance to automatic mode.
     /// sensor.set_white_balance(WhiteBalance::Auto)?;
@@ -288,7 +279,7 @@ impl VisionSensor {
     ///
     /// ```
     /// // Register a vision sensor on port 1.
-    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    /// let mut sensor = VisionSensor::new(peripherals.port_1);
     ///
     /// // Make the LED red!
     /// sensor.set_led_mode(LedMode::Manual(Rgb::new(255, 0, 0)))?;
@@ -305,53 +296,13 @@ impl VisionSensor {
         Ok(())
     }
 
-    /// Sets the point that object positions are relative to.
-    ///
-    /// In other words, this function will change where (0, 0) is located in the sensor's coordinate system.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// // Register a vision sensor on port 1.
-    /// // We'll set the origin point to top left for now.
-    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
-    ///
-    /// // Change the origin point to the center of the sensor's FOV
-    /// sensor.set_origin_point(VisionOriginPoint::Center)?;
-    /// ```
-    pub fn set_origin_point(&mut self, origin: VisionOriginPoint) -> Result<(), VisionError> {
-        bail_on!(PROS_ERR, unsafe {
-            pros_sys::vision_set_zero_point(self.port.index(), origin as _)
-        });
-
-        self.origin_point = origin;
-
-        Ok(())
-    }
-
-    /// Gets the origin point that object positions are relative to.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// // Register a vision sensor on port 1.
-    /// // We'll set the origin point to top left for now.
-    /// let sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
-    ///
-    /// // Get the origin point we passed to the sensor on construction (the top left).
-    /// assert_eq!(sensor.origin_point(), Ok(VisionOriginPoint::TopLeft));
-    /// ```
-    pub fn origin_point(&self) -> VisionOriginPoint {
-        self.origin_point
-    }
-
     /// Gets a list of objects detected by the sensor ordered from largest to smallest in size.
     ///
     /// # Examples
     ///
     /// ```
     /// // Register a vision sensor on port 1.
-    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    /// let mut sensor = VisionSensor::new(peripherals.port_1);
     ///
     /// // Create and add a vision signature for object detection
     /// let my_signature = VisionSignature::new(
@@ -396,7 +347,7 @@ impl VisionSensor {
     ///
     /// ```
     /// // Register a vision sensor on port 1.
-    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    /// let mut sensor = VisionSensor::new(peripherals.port_1);
     ///
     /// // Create and add a vision signature for object detection
     /// let my_signature = VisionSignature::new(
@@ -434,7 +385,7 @@ impl VisionSensor {
     ///
     /// ```
     /// // Register a vision sensor on port 1.
-    /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
+    /// let mut sensor = VisionSensor::new(peripherals.port_1);
     ///
     /// // Enable Wi-Fi
     /// sensor.set_wifi_mode(true)?;
@@ -658,7 +609,7 @@ pub struct VisionCode {
     pub sig_5: Option<VisionSignature>,
 }
 
-// Type definitions to make this part less painful.
+// Type aliases to make this part less painful.
 
 type TwoSignatures = (VisionSignature, VisionSignature);
 type ThreeSignatures = (VisionSignature, VisionSignature, VisionSignature);
@@ -817,16 +768,6 @@ impl From<pros_sys::vision_object_type_e_t> for VisionSignatureType {
 /// This struct contains metadata about objects detected by the vision sensor. Objects are
 /// detected by calling [`VisionSensor::objects`] after adding signatures and color codes
 /// to the sensor.
-///
-/// # Coordinate System
-///
-/// The coordinate system used by the `x`, `y`, `center_x`, and `center_y` are dependent on
-/// the [`VisionOriginPoint`] value passed to [`VisionSensor::new`] or [`VisionSensor::set_origin_point`].
-///
-/// - If the origin point is [`VisionOriginPoint::TopLeft`], then objects will use coordinates relaative
-///   to the top left of the camera's field of view.
-/// - If the origin point is [`VisionOriginPoint::Center`], then objects will use coordinates relaative
-///   to the center left of the camera's field of view.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VisionObject {
     /// The ID of the [`VisionSignature`] used to detect this object.
@@ -835,18 +776,18 @@ pub struct VisionObject {
     /// The type of signature used to detect this object.
     pub signature_type: VisionSignatureType,
 
-    /// The horizontal pixel offset from the specified [`VisionOriginPoint`] on the camera's field of view.
+    /// The horizontal pixel offset from top left point on the camera's field of view.
     pub x: i16,
 
-    /// The vertical pixel offset from the specified [`VisionOriginPoint`] on the camera's field of view.
+    /// The vertical pixel offset from top left point on the camera's field of view.
     pub y: i16,
 
-    /// The horizontal pixel offset relative to the center of the object from the specified [`VisionOriginPoint`]
-    /// on the camera's field of view.
+    /// The horizontal pixel offset relative to the center of the object from top left point on
+    /// the camera's field of view.
     pub center_x: i16,
 
-    /// The vertical pixel offset relative to the center of the object from the specified [`VisionOriginPoint`]
-    /// on the camera's field of view.
+    /// The vertical pixel offset relative to the center of the object from top left point on
+    /// the camera's field of view.
     pub center_y: i16,
 
     /// The approximate degrees of rotation of the detected object's bounding box.
@@ -980,37 +921,6 @@ impl From<(u8, u8, u8)> for Rgb {
 impl From<Rgb> for (u8, u8, u8) {
     fn from(value: Rgb) -> (u8, u8, u8) {
         (value.r, value.g, value.b)
-    }
-}
-
-/// Defines an origin point for the coordinate system used by a vision sensor.
-///
-/// This value is passed to [`VisionSensor::new`] and [`VisionSensor::set_origin_point`]
-/// and determines the origin point (0, 0) used by the sensor when reporting detected
-/// objects.
-#[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum VisionOriginPoint {
-    /// The origin is relative to the top left of the camera's field of view.
-    TopLeft = pros_sys::E_VISION_ZERO_TOPLEFT,
-
-    /// The origin is relative to the center of the camera's field of view.
-    Center = pros_sys::E_VISION_ZERO_CENTER,
-}
-
-impl From<VisionOriginPoint> for pros_sys::vision_zero_e_t {
-    fn from(value: VisionOriginPoint) -> pros_sys::vision_zero_e_t {
-        value as _
-    }
-}
-
-impl From<pros_sys::vision_zero_e_t> for VisionOriginPoint {
-    fn from(value: pros_sys::vision_zero_e_t) -> VisionOriginPoint {
-        match value {
-            pros_sys::E_VISION_ZERO_TOPLEFT => Self::TopLeft,
-            pros_sys::E_VISION_ZERO_CENTER => Self::Center,
-            _ => unreachable!(),
-        }
     }
 }
 
