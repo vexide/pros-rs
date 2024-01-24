@@ -167,7 +167,7 @@ impl VisionSensor {
             LedMode::Auto => bail_on!(PROS_ERR, unsafe {
                 pros_sys::vision_clear_led(self.port.index())
             }),
-            LedMode::Rgb(rgb) => bail_on!(PROS_ERR, unsafe {
+            LedMode::Manual(rgb) => bail_on!(PROS_ERR, unsafe {
                 pros_sys::vision_set_led(self.port.index(), <Rgb as Into<u32>>::into(rgb) as i32)
             }),
         };
@@ -695,7 +695,6 @@ impl From<pros_sys::vision_zero_e_t> for VisionOriginPoint {
         }
     }
 }
-
 
 /// Vision Sensor white balance mode.
 ///

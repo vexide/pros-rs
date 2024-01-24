@@ -393,7 +393,10 @@ pub mod prelude {
                 motor::{BrakeMode, Gearset, Motor},
                 optical::OpticalSensor,
                 rotation::RotationSensor,
-                vision::VisionSensor,
+                vision::{
+                    VisionCode, VisionOriginPoint, VisionSensor, VisionSignature,
+                    VisionSignatureType,
+                },
                 SmartDevice, SmartPort,
             },
         },

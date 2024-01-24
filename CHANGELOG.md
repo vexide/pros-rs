@@ -26,6 +26,7 @@ Before releasing:
 ### Fixed
 
 ### Changed
+- Refactored the vision sensor API. (**Breaking Change**) (#77)
 
 ### Removed
 
