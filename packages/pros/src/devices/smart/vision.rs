@@ -4,8 +4,8 @@
 //!
 //! # Hardware Overview
 //!
-//! The VEX Vision Sensor is a device powered by a standalone ARM Cortex M4+M0 processor
-//! and color camera for the purpose of performing object recognition. The sensor can be
+//! The VEX Vision Sensor is a device powered by an ARM Cortex M4 and Cortex M0 coprocessor
+//! with a color camera for the purpose of performing object recognition. The sensor can be
 //! trained to locate objects by color. The camera module itself is very similar internally
 //! to the Pixy2 camera, and performs its own onboard image processing. Manually processing
 //! raw image data from the sensor is not currently possible.
