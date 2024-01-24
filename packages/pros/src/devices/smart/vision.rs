@@ -423,6 +423,13 @@ impl VisionSensor {
     /// Enables or disables the sensor's onboard Wi-Fi hotspot for streaming
     /// camera data over a webserver.
     ///
+    /// Once enabled, the sensor will create a wireless network with an SSID
+    /// in the format of of VISION_XXXX. The sensor's camera feed is available
+    /// at `192.168.1.1`.
+    ///
+    /// When in Wi-Fi mode, object detection will not be available. This mode
+    /// will be automatically disabled when connected to field control.
+    ///
     /// # Examples
     ///
     /// ```
@@ -430,9 +437,9 @@ impl VisionSensor {
     /// let mut sensor = VisionSensor::new(peripherals.port_1, VisionOriginPoint::TopLeft)?;
     ///
     /// // Enable Wi-Fi
-    /// sensor.set_wifi_enabled(true)?;
+    /// sensor.set_wifi_mode(true)?;
     /// ```
-    pub fn set_wifi_enabled(&self, enabled: bool) -> Result<(), VisionError> {
+    pub fn set_wifi_mode(&self, enabled: bool) -> Result<(), VisionError> {
         bail_on!(PROS_ERR, unsafe {
             pros_sys::vision_set_wifi_mode(self.port.index(), enabled as u8)
         });
