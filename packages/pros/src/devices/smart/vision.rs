@@ -12,7 +12,7 @@
 //!
 //! Every 200 milliseconds, the camera provides a list of the objects found matching up
 //! to seven unique [`VisionSignature`]s. The object’s height, width, and location is provided.
-//! Multi-colored objects may also be programmed through the use of [`ColorCode`]s.
+//! Multi-colored objects may also be programmed through the use of [`VisionCode`]s.
 //!
 //! The Vision Sensor has USB for a direct connection to a computer, where it can be configured
 //! using VEX's proprietary vision utility tool to generate color signatures. The Vision Sensor
@@ -33,7 +33,7 @@ use crate::{
 };
 
 /// The horizontal resolution of the vision sensor.
-///
+///f
 /// This value is based on the `VISION_FOV_WIDTH` macro constant in PROS.
 pub const VISION_RESOLUTION_WIDTH: u16 = 316;
 
@@ -76,13 +76,11 @@ impl VisionSensor {
     }
 
     /// Adds a detection signature to the sensor's onboard memory. This signature will be used to
-    /// identify objects when using [`objects`].
+    /// identify objects when using [`VisionSensor::objects`].
     ///
     /// The sensor can store up to 7 unique signatures, with each signature slot denoted by the
     /// [`VisionSignature::id`] field. If a signature with an ID matching an existing signature
     /// on the sensor is added, then the existing signature will be overwritten with the new one.
-    ///
-    /// [`objects`]: VisionSensor::objects
     ///
     /// # Volatile Memory
     ///
@@ -118,12 +116,10 @@ impl VisionSensor {
     }
 
     /// Adds a color code to the sensor's onboard memory. This code will be used to identify objects
-    /// when using [`objects`].
+    /// when using [`VisionSensor::objects`].
     ///
     /// Color codes are effectively "signature groups" that the sensor will use to identify objects
     /// containing the color of their signatures next to each other.
-    ///
-    /// [`objects`]: VisionSensor::objects
     ///
     /// # Volatile Memory
     ///
@@ -188,7 +184,7 @@ impl VisionSensor {
 
     /// Get the current exposure percentage of the vision sensor.
     ///
-    /// The returned result should be within 0.0 to 1.5.
+    /// The returned result should be within `0.0` to `1.5``.
     ///
     /// # Examples
     ///
@@ -598,7 +594,7 @@ impl From<VisionSignature> for pros_sys::vision_signature_s_t {
 
 /// A vision detection code.
 ///
-/// [`VisionCode`]s are a special type of detection signature that group multiple [`VisionSignature`]s
+/// Codes are a special type of detection signature that group multiple [`VisionSignature`]s
 /// together. A [`VisionCode`] can associate 2-5 color signatures together, detecting the resulting object
 /// when its color signatures are present close to each other.
 ///
