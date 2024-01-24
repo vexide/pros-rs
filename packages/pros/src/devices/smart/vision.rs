@@ -15,7 +15,12 @@ use crate::{
     lvgl::colors::LcdColor,
 };
 
-/// Represents a vision sensor plugged into a smart port.
+pub const VISION_FOV_WIDTH: u16 = 316;
+pub const VISION_FOV_HEIGHT: u16 = 212;
+
+/// VEX Vision Sensor
+///
+/// This struct represents a vision sensor plugged into a smart port.
 #[derive(Debug, Eq, PartialEq)]
 pub struct VisionSensor {
     port: SmartPort,
@@ -42,7 +47,8 @@ impl VisionSensor {
     /// identify objects when using [`Self::objects`].
     ///
     /// The sensor can store up to 7 unique signatures, with each signature slot denoted by the
-    /// [`VisionSignature::id`] field.
+    /// [`VisionSignature::id`] field. If a signature with an ID matching an existing signature
+    /// on the sensor is added, then the existing signature will be overwritten with the new one.
     ///
     /// # Volatile Memory
     ///
@@ -133,7 +139,7 @@ impl VisionSensor {
                     pros_sys::vision_set_auto_white_balance(self.port.index(), 1)
                 });
             }
-            WhiteBalance::Rgb(rgb) => {
+            WhiteBalance::Manual(rgb) => {
                 // Turn off automatic white balance, since the user wants to do this manually.
                 bail_on!(PROS_ERR, unsafe {
                     pros_sys::vision_set_auto_white_balance(self.port.index(), 0)
@@ -223,24 +229,59 @@ impl SmartDevice for VisionSensor {
     }
 }
 
+/// A vision detection color signature.
+///
+/// Vision signatures contain information used by the vision sensor to detect objects of a certain
+/// color. These signatures are typically generated through VEX's vision utility tool rather than
+/// written by hand. For creating signatures using the utility, see [`Self::from_utility`].
+///
+/// # Format & Detection Overview
+///
+/// Vision signatures operate in a version of the Y'UV color space, specifically using the "U" and "V"
+/// chroma components for edge detection purposes. This can be seen in the `u_threshold` and
+/// `v_threshold` fields of this struct. These fields place three "threshold" (min, max, mean)
+/// values on the u and v chroma values detected by the sensor. The values are then transformed to a
+/// 3D lookup table to detect actual colors.
+///
+/// There is additionally a `range` field, which works as a scale factor or threshold for how lenient
+/// edge detection should be.
+///
+/// Signatures can additionally be grouped together into [`VisionCode`]s, which narrow the filter for
+/// object detection by requiring two colors
 pub struct VisionSignature {
     /// The signature id.
-    id: NonZeroU8,
+    ///
+    /// This number will determine the slot that the signature is placed into when adding it
+    /// to a [`VisionSensor`]'s onboard memory. This value ranges from 1-7. For more information,
+    /// see [`VisionSensor::add_signature`].
+    pub id: NonZeroU8,
 
-    /// The (min, max, mean) values on the u axis.
-    u_threshold: (i32, i32, i32),
+    /// The (min, max, mean) values on the "U" axis.
+    ///
+    /// This defines a threshold of values for the sensor to match against a certain chroma in the
+    /// Y'UV color space - speciailly on the U component.
+    pub u_threshold: (i32, i32, i32),
 
-    /// The (min, max, mean) values on the v axis.
-    v_threshold: (i32, i32, i32),
+    /// The (min, max, mean) values on the V axis.
+    ///
+    /// This defines a threshold of values for the sensor to match against a certain chroma in the
+    /// Y'UV color space - speciailly on the "V" component.
+    pub v_threshold: (i32, i32, i32),
 
     /// The signature range scale factor.
-    range: f32,
+    ///
+    /// This value effectively serves as a threshold for how lenient the sensor should be
+    /// when detecting the edges of colors. This value ranges from 0-11 in Vision Utility.
+    ///
+    /// Higher values of `range` will increase the range of brightness that the sensor will
+    /// consider to be part of the signature. Lighter/Darker shades of the signature's color
+    /// will be detected more often.
+    pub range: f32,
 
-    /// The RGB8 color of the signature.
-    rgb: Rgb,
-
-    /// The signature type, normal or color code.
-    signature_type: VisionSignatureType,
+    /// The signature type. Color codes are internally stored as signatures by the sensor,
+    /// meaning this value may be different if the detection signature is stored in a color
+    /// code.
+    pub signature_type: VisionSignatureType,
 }
 
 impl VisionSignature {
@@ -249,7 +290,6 @@ impl VisionSignature {
         u_threshold: (i32, i32, i32),
         v_threshold: (i32, i32, i32),
         range: f32,
-        rgb: Rgb,
         signature_type: VisionSignatureType,
     ) -> Self {
         Self {
@@ -257,7 +297,6 @@ impl VisionSignature {
             u_threshold,
             v_threshold,
             range,
-            rgb,
             signature_type,
         }
     }
@@ -271,15 +310,14 @@ impl VisionSignature {
         v_max: i32,
         v_mean: i32,
         range: f32,
-        rgb: u32,
         signature_type: u32,
     ) -> Self {
         Self {
-            id: NonZeroU8::new(id).expect("Vision signature IDs must not be 0"),
+            id: NonZeroU8::new(id)
+                .expect("Vision utility produced a signature with an invalid ID of 0."),
             u_threshold: (u_min, u_max, u_mean),
             v_threshold: (v_min, v_max, v_mean),
             range,
-            rgb: rgb.into(),
             signature_type: signature_type.into(),
         }
     }
@@ -295,7 +333,6 @@ impl TryFrom<pros_sys::vision_signature_s_t> for VisionSignature {
             u_threshold: (value.u_min, value.u_max, value.u_mean),
             v_threshold: (value.v_min, value.v_max, value.v_mean),
             range: value.range,
-            rgb: value.rgb.into(),
             signature_type: value.r#type.into(),
         })
     }
@@ -313,19 +350,45 @@ impl From<VisionSignature> for pros_sys::vision_signature_s_t {
             v_max: value.v_threshold.1,
             v_mean: value.v_threshold.2,
             range: value.range,
-            rgb: value.rgb.into(),
+            // This seems to be an SDK internal left in the PROS API. PROS leaves their `rgb` field` as 0 when calling
+            // vision_signature_from_utility`, meaning the value likely only exists for telemetry purposes in getters.
+            rgb: 0,
             r#type: value.signature_type.into(),
         }
     }
 }
 
+/// A vision detection code.
+///
+/// [`VisionCode`]s are a special type of detection signature that group multiple [`VisionSignature`]s
+/// together. A [`VisionCode`] can associate 2-5 color signatures together, detecting the resulting object
+/// when its color signatures are present close to each other.
+///
+/// These codes work very similarly to [Pixy2 Color Codes](https://docs.pixycam.com/wiki/doku.php?id=wiki:v2:using_color_codes).
 pub struct VisionCode {
+    /// The first signature in the code.
     pub sig_1: VisionSignature,
+
+    /// The second signature in the code.
     pub sig_2: VisionSignature,
+
+    /// The third signature in the code.
+    ///
+    /// This signature is optional, and can be omitted if necessary.
     pub sig_3: Option<VisionSignature>,
+
+    /// The fourth signature in the code.
+    ///
+    /// This signature is optional, and can be omitted if necessary.
     pub sig_4: Option<VisionSignature>,
+
+    /// The fifth signature in the code.
+    ///
+    /// This signature is optional, and can be omitted if necessary.
     pub sig_5: Option<VisionSignature>,
 }
+
+// Type definitions to make this part less painful.
 
 type TwoSignatures = (VisionSignature, VisionSignature);
 type ThreeSignatures = (VisionSignature, VisionSignature, VisionSignature);
@@ -344,6 +407,10 @@ type FiveSignatures = (
 );
 
 impl VisionCode {
+    /// Creates a new vision code.
+    ///
+    /// Two signatures are require to create a vision code, while the other three
+    /// are optional.
     pub fn new(
         sig_1: VisionSignature,
         sig_2: VisionSignature,
@@ -434,20 +501,50 @@ impl From<pros_sys::vision_object_type_e_t> for VisionSignatureType {
     }
 }
 
+/// A detected vision object.
+///
+/// This struct contains metadata about objects detected by the vision sensor. Objects are
+/// detected by calling [`VisionSensor::objects`] after adding signatures and color codes
+/// to the sensor.
+///
+/// # Coordinate System
+///
+/// The coordinate system used by the `x`, `y`, `center_x`, and `center_y` are dependent on
+/// the [`VisionOriginPoint`] value passed to [`VisionSensor::new`] or [`VisionSensor::set_origin_point`].
+///
+/// - If the origin point is [`VisionOriginPoint::TopLeft`], then objects will use coordinates relaative
+///   to the top left of the camera's field of view.
+/// - If the origin point is [`VisionOriginPoint::Center`], then objects will use coordinates relaative
+///   to the center left of the camera's field of view.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VisionObject {
+    /// The ID of the [`VisionSignature`] used to detect this object.
     pub signature_id: u16,
+
+    /// The type of signature used to detect this object.
     pub signature_type: VisionSignatureType,
 
+    /// The horizontal pixel offset from the specified [`VisionOriginPoint`] on the camera's field of view.
     pub x: i16,
+
+    /// The vertical pixel offset from the specified [`VisionOriginPoint`] on the camera's field of view.
     pub y: i16,
 
+    /// The horizontal pixel offset relative to the center of the object from the specified [`VisionOriginPoint`]
+    /// on the camera's field of view.
     pub center_x: i16,
+
+    /// The vertical pixel offset relative to the center of the object from the specified [`VisionOriginPoint`]
+    /// on the camera's field of view.
     pub center_y: i16,
 
+    /// The approximate degrees of rotation of the detected object's bounding box.
     pub angle: i16,
 
+    /// The width of the detected object's bounding box in pixels.
     pub width: i16,
+
+    /// The height of the detected object's bounding box in pixels.
     pub height: i16,
 }
 
@@ -489,11 +586,23 @@ impl From<VisionObject> for pros_sys::vision_object_s_t {
     }
 }
 
+/// Represents a 32-bit RGB color.
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Rgb {
-    r: u8,
-    g: u8,
-    b: u8,
+    /// The red component of the color.
+    ///
+    /// This value ranges from 0-255.
+    pub r: u8,
+
+    /// The green component of the color.
+    ///
+    /// This value ranges from 0-255.
+    pub g: u8,
+
+    /// The blue component of the color.
+    ///
+    /// This value ranges from 0-255.
+    pub b: u8,
 }
 
 impl Rgb {
@@ -509,7 +618,6 @@ impl From<Rgb> for u32 {
 }
 
 const BITMASK: u32 = 0b11111111;
-
 impl From<u32> for Rgb {
     fn from(value: u32) -> Self {
         Self {
@@ -541,10 +649,34 @@ impl From<LcdColor> for Rgb {
     }
 }
 
+impl From<(u8, u8, u8)> for Rgb {
+    fn from(tuple: (u8, u8, u8)) -> Rgb {
+        Self {
+            r: tuple.0,
+            g: tuple.1,
+            b: tuple.2,
+        }
+    }
+}
+
+impl From<Rgb> for (u8, u8, u8) {
+    fn from(value: Rgb) -> (u8, u8, u8) {
+        (value.r, value.g, value.b)
+    }
+}
+
+/// Defines an origin point for the coordinate system used by a vision sensor.
+///
+/// This value is passed to [`VisionSensor::new`] and [`VisionSensor::set_origin_point`]
+/// and determines the origin point (0, 0) used by the sensor when reporting detected
+/// objects.
 #[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VisionOriginPoint {
+    /// The origin is relative to the top left of the camera's field of view.
     TopLeft = pros_sys::E_VISION_ZERO_TOPLEFT,
+
+    /// The origin is relative to the center of the camera's field of view.
     Center = pros_sys::E_VISION_ZERO_CENTER,
 }
 
@@ -564,16 +696,41 @@ impl From<pros_sys::vision_zero_e_t> for VisionOriginPoint {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+
+/// Vision Sensor white balance mode.
+///
+/// Represents a white balance configuration for the vision sensor's camera.
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WhiteBalance {
-    Rgb(Rgb),
+    /// Automatic Mode
+    ///
+    /// The sensor will automatically adjust the camera's white balance, using the brightest
+    /// part of the image as a white point.
+    #[default]
     Auto,
+
+    /// Manual Mode
+    ///
+    /// Allows for manual control over white balance using an RGB color.
+    Manual(Rgb),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Vision Sensor LED mode.
+///
+/// Represents the states that the integrated LED indicator on a vision sensor can be in.
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LedMode {
-    Rgb(Rgb),
+    /// Automatic Mode
+    ///
+    /// When in manual mode, the integrated LED will display a user-set RGB color code.
+    #[default]
     Auto,
+
+    /// Manual Mode
+    ///
+    /// When in automatic mode, the integrated LED will display the color of the most prominent
+    /// detected object's signature color.
+    Manual(Rgb),
 }
 
 #[derive(Debug, Snafu)]
