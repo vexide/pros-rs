@@ -962,14 +962,14 @@ pub enum WhiteBalance {
 pub enum LedMode {
     /// Automatic Mode
     ///
-    /// When in manual mode, the integrated LED will display a user-set RGB color code.
+    /// When in automatic mode, the integrated LED will display the color of the most prominent
+    /// detected object's signature color.
     #[default]
     Auto,
 
     /// Manual Mode
     ///
-    /// When in automatic mode, the integrated LED will display the color of the most prominent
-    /// detected object's signature color.
+    /// When in manual mode, the integrated LED will display a user-set RGB color code.
     Manual(Rgb),
 }
 
