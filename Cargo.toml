@@ -4,10 +4,10 @@ resolver = "2"
 
 [profile.dev]
 strip = true
-opt-level = "z"
+opt-level = "s"
 
 [profile.release]
 strip = true
-lto = true
+lto = "thin"
 codegen-units = 1
-opt-level = "z"
+opt-level = "s"
