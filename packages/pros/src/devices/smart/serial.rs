@@ -13,8 +13,15 @@ pub struct SerialPort {
 impl SerialPort {
     /// Open and configure a serial port on a [`SmartPort`].
     ///
-    /// This configures a smart port to act as a generic serial device, capable of sending/recieving
-    /// data.
+    /// This configures a [`SmartPort`] to act as a generic serial controller capable of sending/recieving
+    /// data. Providing a baud rate, or the transmission rate of bits is required. The maximum theoretical
+    /// baud rate is 921600.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let serial = SerialPort::open(peripherals.port_1, 115200)?;
+    /// ```
     pub fn open(port: SmartPort, baud_rate: u32) -> Result<Self, SerialError> {
         unsafe {
             bail_on!(PROS_ERR, pros_sys::serial_enable(port.index()));
@@ -50,7 +57,21 @@ impl SerialPort {
         Ok(())
     }
 
-    /// Read the next byte available in the port's input buffer.
+    /// Read the next byte available in the serial port's input buffer, or `None` if the input
+    /// buffer is empty.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let serial = SerialPort::open(peripherals.port_1, 115200)?;
+    ///
+    /// loop {
+    ///     if let Some(byte) = serial.read_byte()? {
+    ///         println!("Got byte: {}", byte);
+    ///     }
+    ///     pros::task::delay(Duration::from_millis(10));
+    /// }
+    /// ```
     pub fn read_byte(&self) -> Result<Option<u8>, SerialError> {
         let read = bail_on!(PROS_ERR, unsafe {
             pros_sys::serial_read_byte(self.port.index())
@@ -62,7 +83,18 @@ impl SerialPort {
         })
     }
 
-    /// Read the next byte available in the port's input buffer without removing it.
+    /// Read the next byte available in the port's input buffer without removing it. Returns
+    /// `None` if the input buffer is empty.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let serial = SerialPort::open(peripherals.port_1, 115200)?;
+    ///
+    /// if let Some(next_byte) = serial.peek_byte()? {
+    ///     println!("Next byte: {}", next_byte);
+    /// }
+    /// ```
     pub fn peek_byte(&self) -> Result<Option<u8>, SerialError> {
         let peeked = bail_on!(PROS_ERR, unsafe {
             pros_sys::serial_peek_byte(self.port.index())
@@ -74,14 +106,33 @@ impl SerialPort {
         })
     }
 
-    /// Write the single byte to the port's output buffer.
+    /// Write a single byte to the port's output buffer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let serial = SerialPort::open(peripherals.port_1, 115200)?;
+    ///
+    /// // Write 0x80 (128u8) to the output buffer
+    /// serial.write_byte(0x80)?;
+    /// ```
     pub fn write_byte(&mut self, byte: u8) -> Result<usize, SerialError> {
         Ok(bail_on!(PROS_ERR, unsafe {
             pros_sys::serial_write_byte(self.port.index(), byte)
         }) as usize)
     }
 
-    // Returns the number of bytes available to be read in the the port's FIFO input buffer.
+    /// Returns the number of bytes available to be read in the the port's FIFO input buffer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let serial = SerialPort::open(peripherals.port_1, 115200)?;
+    ///
+    /// if serial.byets_to_read()? > 0 {
+    ///     println!("{}", serial.read_byte()?.unwrap());
+    /// }
+    /// ```
     pub fn bytes_to_read(&self) -> Result<usize, SerialError> {
         Ok(bail_on!(PROS_ERR, unsafe {
             pros_sys::serial_get_read_avail(self.port.index())
@@ -89,6 +140,16 @@ impl SerialPort {
     }
 
     /// Returns the number of bytes free in the port's FIFO output buffer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let serial = SerialPort::open(peripherals.port_1, 115200)?;
+    ///
+    /// if serial.available_write_bytes()? > 0 {
+    ///     serial.write_byte(0x80)?;
+    /// }
+    /// ```
     pub fn available_write_bytes(&self) -> Result<usize, SerialError> {
         Ok(bail_on!(PROS_ERR, unsafe {
             pros_sys::serial_get_write_free(self.port.index())
@@ -99,6 +160,19 @@ impl SerialPort {
 impl io::Read for SerialPort {
     /// Read some bytes from this serial port into the specified buffer, returning
     /// how many bytes were read.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let serial = SerialPort::open(peripherals.port_1, 115200)?;
+    ///
+    /// let mut buffer = Vec::new();
+    ///
+    /// loop {
+    ///     serial.read(&mut buffer);
+    ///     pros::task::delay(Duration::from_millis(10));
+    /// }
+    /// ```
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let bytes_read = self.recieve(buf).map_err(|err| match err {
             SerialError::InternalWriteError => io::ErrorKind::Other,
@@ -113,7 +187,8 @@ impl io::Read for SerialPort {
 }
 
 impl io::Write for SerialPort {
-    /// Write a buffer into the serial port's output buffer, returning how many bytes were written.
+    /// Write a buffer into the serial port's output buffer, returning how many bytes
+    /// were written.
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         let bytes_written = self.transmit(buf).map_err(|err| match err {
             SerialError::InternalWriteError => io::ErrorKind::Other,
@@ -126,8 +201,18 @@ impl io::Write for SerialPort {
         Ok(bytes_written)
     }
 
-    /// Flush the serial port's output buffer, ensuring that all intermediately buffered
-    /// contents reach their destination.
+    /// Clears the internal input and output FIFO buffers.
+    ///
+    /// This can be useful to reset state and remove old, potentially unneeded data
+    /// from the input FIFO buffer or to cancel sending any data in the output FIFO
+    /// buffer.
+    ///
+    /// # Flushing does not send data.
+    ///
+    /// This function does not cause the data in the output buffer to be
+    /// written, it simply clears the internal buffers. Unlike stdout, generic
+    /// serial does not use buffered IO (the FIFO buffers are written as soon
+    /// as possible).
     fn flush(&mut self) -> io::Result<()> {
         Ok(self.flush().map_err(|err| match err {
             SerialError::InternalWriteError => io::ErrorKind::Other,
