@@ -3,8 +3,8 @@
 
 extern crate alloc;
 
-use core::time::Duration;
 use alloc::vec::Vec;
+use core::time::Duration;
 
 use pros::prelude::*;
 

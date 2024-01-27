@@ -1,3 +1,7 @@
+//! Generic serial device module.
+//!
+//! Provides support for using [`SmartPort`]s as generic serial communication devices.
+
 use no_std_io::io;
 use pros_sys::PROS_ERR;
 use snafu::Snafu;
