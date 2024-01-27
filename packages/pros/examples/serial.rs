@@ -1,7 +1,10 @@
 #![no_std]
 #![no_main]
 
+extern crate alloc;
+
 use core::time::Duration;
+use alloc::vec::Vec;
 
 use pros::prelude::*;
 
@@ -19,11 +22,10 @@ impl Robot {
 
 impl AsyncRobot for Robot {
     async fn opcontrol(&mut self) -> pros::Result {
-        let mut buffer = [0; 256];
+        let mut buffer = Vec::new();
 
         loop {
-            let read = self.serial_port.read(&mut buffer).unwrap();
-            self.serial_port.write(&buffer[..read]).unwrap();
+            self.serial_port.read(&mut buffer);
 
             pros::task::delay(Duration::from_millis(10));
         }

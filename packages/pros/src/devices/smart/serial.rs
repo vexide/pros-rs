@@ -164,7 +164,7 @@ impl io::Read for SerialPort {
     /// # Examples
     ///
     /// ```
-    /// let serial = SerialPort::open(peripherals.port_1, 115200)?;
+    /// let mut serial = SerialPort::open(peripherals.port_1, 115200)?;
     ///
     /// let mut buffer = Vec::new();
     ///
@@ -189,6 +189,14 @@ impl io::Read for SerialPort {
 impl io::Write for SerialPort {
     /// Write a buffer into the serial port's output buffer, returning how many bytes
     /// were written.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut serial = SerialPort::open(peripherals.port_1, 115200)?;
+    ///
+    /// buffer.write(b"some bytes")?;
+    /// ```
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         let bytes_written = self.transmit(buf).map_err(|err| match err {
             SerialError::InternalWriteError => io::ErrorKind::Other,
@@ -213,6 +221,13 @@ impl io::Write for SerialPort {
     /// written, it simply clears the internal buffers. Unlike stdout, generic
     /// serial does not use buffered IO (the FIFO buffers are written as soon
     /// as possible).
+    ///
+    /// ```
+    /// let mut serial = SerialPort::open(peripherals.port_1, 115200)?;
+    ///
+    /// buffer.write(b"some bytes")?;
+    /// buffer.flush()?;
+    /// ```
     fn flush(&mut self) -> io::Result<()> {
         Ok(self.flush().map_err(|err| match err {
             SerialError::InternalWriteError => io::ErrorKind::Other,
