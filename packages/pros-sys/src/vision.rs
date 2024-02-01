@@ -49,7 +49,7 @@ pub struct vision_object_s_t {
     pub top_coord: i16,
     pub width: i16,
     pub height: i16,
-    pub angle: i16,
+    pub angle: u16,
     pub x_middle_coord: i16,
     pub y_middle_coord: i16,
 }

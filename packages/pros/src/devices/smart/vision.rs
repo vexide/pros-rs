@@ -1,129 +1,401 @@
-//! Vision sensor device.
+//! Vision sensor device module.
 //!
-//! Vision sensors take in a zero point at creation.
+//! This module provides an interface for interacting with the VEX Vision Sensor.
+//!
+//! # Hardware Overview
+//!
+//! The VEX Vision Sensor is a device powered by an ARM Cortex M4 and Cortex M0 coprocessor
+//! with a color camera for the purpose of performing object recognition. The sensor can be
+//! trained to locate objects by color. The camera module itself is very similar internally
+//! to the Pixy2 camera, and performs its own onboard image processing. Manually processing
+//! raw image data from the sensor is not currently possible.
+//!
+//! Every 200 milliseconds, the camera provides a list of the objects found matching up
+//! to seven unique [`VisionSignature`]s. The object’s height, width, and location is provided.
+//! Multi-colored objects may also be programmed through the use of [`VisionCode`]s.
+//!
+//! The Vision Sensor has USB for a direct connection to a computer, where it can be configured
+//! using VEX's proprietary vision utility tool to generate color signatures. The Vision Sensor
+//! also has WiFi Direct and can act as web server, allowing a live video feed of the camera
+//! from any computer equipped with a browser and WiFi.
 
 extern crate alloc;
 use alloc::vec::Vec;
+use core::{num::NonZeroU8, time::Duration};
 
 use pros_sys::{PROS_ERR, VISION_OBJECT_ERR_SIG};
 use snafu::Snafu;
 
 use super::{SmartDevice, SmartDeviceType, SmartPort};
 use crate::{
-    error::{bail_errno, bail_on, map_errno, PortError},
+    error::{bail_on, map_errno, PortError},
     lvgl::colors::LcdColor,
 };
 
-/// Represents a vision sensor plugged into the vex.
+/// The horizontal resolution of the vision sensor.
+///
+/// This value is based on the `VISION_FOV_WIDTH` macro constant in PROS.
+pub const VISION_RESOLUTION_WIDTH: u16 = 316;
+
+/// The vertical resolution of the vision sensor.
+///
+/// This value is based on the `VISION_FOV_HEIGHT` macro constant in PROS.
+pub const VISION_RESOLUTION_HEIGHT: u16 = 212;
+
+/// The update rate of the vision sensor.
+pub const VISION_UPDATE_RATE: Duration = Duration::from_millis(50);
+
+/// VEX Vision Sensor
+///
+/// This struct represents a vision sensor plugged into a smart port.
 #[derive(Debug, Eq, PartialEq)]
 pub struct VisionSensor {
     port: SmartPort,
 }
 
 impl VisionSensor {
-    /// Creates a new vision sensor.
-    pub fn new(port: SmartPort, zero: VisionZeroPoint) -> Result<Self, VisionError> {
-        unsafe {
-            bail_on!(
-                PROS_ERR,
-                pros_sys::vision_set_zero_point(port.index(), zero as _)
-            );
-        }
-
-        Ok(Self { port })
+    /// Creates a new vision sensor on a smart port.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let mut sensor = VisionSensor::new(peripherals.port_1);
+    /// ```
+    pub fn new(port: SmartPort) -> Self {
+        Self { port }
     }
 
-    /// Returns the nth largest object seen by the camera.
-    pub fn nth_largest_object(&self, n: u32) -> Result<VisionObject, VisionError> {
-        unsafe { pros_sys::vision_get_by_size(self.port.index(), n).try_into() }
+    /// Adds a detection signature to the sensor's onboard memory. This signature will be used to
+    /// identify objects when using [`VisionSensor::objects`].
+    ///
+    /// The sensor can store up to 7 unique signatures, with each signature slot denoted by the
+    /// [`VisionSignature::id`] field. If a signature with an ID matching an existing signature
+    /// on the sensor is added, then the existing signature will be overwritten with the new one.
+    ///
+    /// # Volatile Memory
+    ///
+    /// The memory on the Vision Sensor is *volatile* and will therefore be wiped when the sensor
+    /// loses power. As a result, this function should be called every time the sensor is used on
+    /// program start.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let mut sensor = VisionSensor::new(peripherals.port_1);
+    ///
+    /// // Register a signature for detecting red objects.
+    /// // This signature was generated using VEX's vision utility app.
+    /// let signature = VisionSignature::new(
+    ///     NonZeroU8::new(1).unwrap(),
+    ///     (10049, 11513, 10781),
+    ///     (-425, 1, -212),
+    ///     4.1,
+    ///     VisionSignatureType::Normal,
+    /// );
+    ///
+    /// // Store the signature on our sensor.
+    /// sensor.add_signature(signature)?;
+    /// ```
+    pub fn add_signature(&mut self, signature: VisionSignature) -> Result<(), VisionError> {
+        bail_on!(PROS_ERR, unsafe {
+            pros_sys::vision_set_signature(self.port.index(), signature.id.get(), &signature.into())
+        });
+
+        Ok(())
     }
 
-    /// Returns a list of all objects in order of size (largest to smallest).
+    /// Adds a color code to the sensor's onboard memory. This code will be used to identify objects
+    /// when using [`VisionSensor::objects`].
+    ///
+    /// Color codes are effectively "signature groups" that the sensor will use to identify objects
+    /// containing the color of their signatures next to each other.
+    ///
+    /// # Volatile Memory
+    ///
+    /// The onboard memory of the Vision Sensor is *volatile* and will therefore be wiped when the
+    /// sensor loses its power source. As a result, this function should be called every time the
+    /// sensor is used on program start.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let mut sensor = VisionSensor::new(peripherals.port_1);
+    ///
+    /// // Make some signatures.
+    /// let sig1 = VisionSignature::new(
+    ///     NonZeroU8::new(1).unwrap(),
+    ///     (10049, 11513, 10781),
+    ///     (-425, 1, -212),
+    ///     4.1,
+    ///     VisionSignatureType::Normal,
+    /// );
+    /// let sig2 = VisionSignature::new(
+    ///     NonZeroU8::new(2).unwrap(),
+    ///     (-715,-291, -503),
+    ///     (-4109, -3709, -3909),
+    ///     5.7,
+    ///     VisionSignatureType::Normal,
+    /// );
+    ///
+    /// // Merge our two signatures into a single code.
+    /// let code = VisionCode::new(sig1, sig2, None, None, None);
+    ///
+    /// // Store the code on our sensor.
+    /// sensor.add_code(code)?;
+    /// ```
+    pub fn add_code(&mut self, code: VisionCode) -> Result<(), VisionError> {
+        _ = bail_on!(VISION_OBJECT_ERR_SIG, unsafe {
+            pros_sys::vision_create_color_code(
+                self.port.index(),
+                code.sig_1.id.get() as u32,
+                code.sig_2.id.get() as u32,
+                if let Some(sig_3) = code.sig_3 {
+                    sig_3.id.get()
+                } else {
+                    0
+                } as u32,
+                if let Some(sig_4) = code.sig_4 {
+                    sig_4.id.get()
+                } else {
+                    0
+                } as u32,
+                if let Some(sig_5) = code.sig_5 {
+                    sig_5.id.get()
+                } else {
+                    0
+                } as u32,
+            )
+        });
+
+        Ok(())
+    }
+
+    /// Get the current exposure percentage of the vision sensor.
+    ///
+    /// The returned result should be within `0.0` to `1.5``.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let sensor = VisionSensor::new(peripherals.port_1);
+    ///
+    /// // Print the current expsure of the sensor.
+    /// println!("{}", sensor.exposure()?);
+    /// ```
+    pub fn exposure(&self) -> Result<f32, VisionError> {
+        Ok(bail_on!(PROS_ERR, unsafe {
+            pros_sys::vision_get_exposure(self.port.index())
+        }) as f32
+            * 1.5
+            / 150.0)
+    }
+
+    /// Get the current white balance of the vision sensor as an RGB color.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let sensor = VisionSensor::new(peripherals.port_1);
+    ///
+    /// // Print the current white balance of the sensor.
+    /// println!("{}", sensor.white_balance()?);
+    /// ```
+    pub fn white_balance(&self) -> Result<Rgb, VisionError> {
+        Ok((bail_on!(PROS_ERR, unsafe {
+            pros_sys::vision_get_white_balance(self.port.index())
+        }) as u32)
+            .into())
+    }
+
+    /// Sets the exposure percentage of the vision sensor. Should be between 0.0 and 1.5.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let mut sensor = VisionSensor::new(peripherals.port_1);
+    ///
+    /// // Set the sensor's exposure to half of its maximum value.
+    /// sensor.set_exposure(0.75)?;
+    /// ```
+    pub fn set_exposure(&mut self, exposure: f32) -> Result<(), VisionError> {
+        bail_on!(PROS_ERR, unsafe {
+            pros_sys::vision_set_exposure(self.port.index(), (exposure * 150.0 / 1.5) as u8)
+        });
+
+        Ok(())
+    }
+
+    /// Sets the white balance of the vision sensor.
+    ///
+    /// White balance can be either automatically set or manually set through an RGB color.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let mut sensor = VisionSensor::new(peripherals.port_1);
+    ///
+    /// // Set the sensor's white balance to automatic mode.
+    /// sensor.set_white_balance(WhiteBalance::Auto)?;
+    /// ```
+    pub fn set_white_balance(&mut self, white_balance: WhiteBalance) -> Result<(), VisionError> {
+        match white_balance {
+            WhiteBalance::Auto => {
+                bail_on!(PROS_ERR, unsafe {
+                    pros_sys::vision_set_auto_white_balance(self.port.index(), 1)
+                });
+            }
+            WhiteBalance::Manual(rgb) => {
+                // Turn off automatic white balance, since the user wants to do this manually.
+                bail_on!(PROS_ERR, unsafe {
+                    pros_sys::vision_set_auto_white_balance(self.port.index(), 0)
+                });
+
+                // Set manual RGB white balance.
+                bail_on!(PROS_ERR, unsafe {
+                    pros_sys::vision_set_white_balance(
+                        self.port.index(),
+                        <Rgb as Into<u32>>::into(rgb) as i32,
+                    )
+                });
+            }
+        };
+
+        Ok(())
+    }
+
+    /// Configure the behavior of the LED indicator on the sensor.
+    ///
+    /// The default behavior is represented by [`LedMode::Auto`], which will display the color of the most prominent
+    /// detected object's signature color. Alternatively, the LED can be configured to display a single RGB color.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let mut sensor = VisionSensor::new(peripherals.port_1);
+    ///
+    /// // Make the LED red!
+    /// sensor.set_led_mode(LedMode::Manual(Rgb::new(255, 0, 0)))?;
+    /// ```
+    pub fn set_led_mode(&mut self, mode: LedMode) -> Result<(), VisionError> {
+        match mode {
+            LedMode::Auto => bail_on!(PROS_ERR, unsafe {
+                pros_sys::vision_clear_led(self.port.index())
+            }),
+            LedMode::Manual(rgb) => bail_on!(PROS_ERR, unsafe {
+                pros_sys::vision_set_led(self.port.index(), <Rgb as Into<u32>>::into(rgb) as i32)
+            }),
+        };
+        Ok(())
+    }
+
+    /// Gets a list of objects detected by the sensor ordered from largest to smallest in size.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let mut sensor = VisionSensor::new(peripherals.port_1);
+    ///
+    /// // Create and add a vision signature for object detection
+    /// let my_signature = VisionSignature::new(
+    ///     NonZeroU8::new(1).unwrap(),
+    ///     (10049, 11513, 10781),
+    ///     (-425, 1, -212),
+    ///     4.1,
+    ///     VisionSignatureType::Normal,
+    /// );
+    /// sensor.add_signature(my_signature)?;
+    ///
+    /// // Get all of the objects detected by our sensor matching the signature we gave it.
+    /// let objects = sensor.objects()?;
+    ///
+    /// // Print the size and position of all the objects we found.
+    /// for object in objects {
+    ///     println!("X: {}, Y: {}, W: {}, H: {}", object.x, object.y, object.width, object.height);
+    /// }
+    /// ```
     pub fn objects(&self) -> Result<Vec<VisionObject>, VisionError> {
-        let obj_count = self.num_objects()?;
-        let mut objects_buf = Vec::with_capacity(obj_count);
+        let object_count = self.object_count()?;
+        let mut objects = Vec::with_capacity(object_count);
 
-        unsafe {
+        bail_on!(PROS_ERR, unsafe {
             pros_sys::vision_read_by_size(
                 self.port.index(),
                 0,
-                obj_count as _,
-                objects_buf.as_mut_ptr(),
-            );
-        }
+                object_count as u32,
+                objects.as_mut_ptr(),
+            )
+        });
 
-        bail_errno!();
-
-        Ok(objects_buf
+        Ok(objects
             .into_iter()
             .filter_map(|object| object.try_into().ok())
             .collect())
     }
 
-    /// Returns the number of objects seen by the camera.
-    pub fn num_objects(&self) -> Result<usize, PortError> {
-        unsafe {
-            Ok(bail_on!(
-                PROS_ERR,
-                pros_sys::vision_get_object_count(self.port.index())
-            )
-            .try_into()
-            .unwrap())
-        }
+    /// Returns the number of objects detected by the sensor.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let mut sensor = VisionSensor::new(peripherals.port_1);
+    ///
+    /// // Create and add a vision signature for object detection
+    /// let my_signature = VisionSignature::new(
+    ///     NonZeroU8::new(1).unwrap(),
+    ///     (10049, 11513, 10781),
+    ///     (-425, 1, -212),
+    ///     4.1,
+    ///     VisionSignatureType::Normal,
+    /// );
+    /// sensor.add_signature(my_signature)?;
+    ///
+    /// // Get all of the objects detected by our sensor matching the signature we gave it.
+    /// let num_objects = sensor.object_count()?;
+    ///
+    /// // Print the amount of objects we found to console.
+    /// println!("Detected {} objects.", num_objects);
+    /// ```
+    pub fn object_count(&self) -> Result<usize, VisionError> {
+        Ok(bail_on!(PROS_ERR, unsafe {
+            pros_sys::vision_get_object_count(self.port.index())
+        }) as usize)
     }
 
-    /// Get the current exposure percentage of the vision sensor. The returned result should be within 0.0 to 1.5.
-    pub fn exposure(&self) -> f32 {
-        unsafe { (pros_sys::vision_get_exposure(self.port.index()) as f32) * 1.5 / 150.0 }
-    }
+    /// Enables or disables the sensor's onboard Wi-Fi hotspot for streaming
+    /// camera data over a webserver.
+    ///
+    /// Once enabled, the sensor will create a wireless network with an SSID
+    /// in the format of of VISION_XXXX. The sensor's camera feed is available
+    /// at `192.168.1.1`.
+    ///
+    /// When in Wi-Fi mode, object detection will not be available. This mode
+    /// will be automatically disabled when connected to field control.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Register a vision sensor on port 1.
+    /// let mut sensor = VisionSensor::new(peripherals.port_1);
+    ///
+    /// // Enable Wi-Fi
+    /// sensor.set_wifi_mode(true)?;
+    /// ```
+    pub fn set_wifi_mode(&self, enabled: bool) -> Result<(), VisionError> {
+        bail_on!(PROS_ERR, unsafe {
+            pros_sys::vision_set_wifi_mode(self.port.index(), enabled as u8)
+        });
 
-    /// Get the current white balance of the vision sensor.
-    pub fn current_white_balance(&self) -> Rgb {
-        unsafe { (pros_sys::vision_get_white_balance(self.port.index()) as u32).into() }
-    }
-
-    /// Sets the exposure percentage of the vision sensor. Should be between 0.0 and 1.5.
-    pub fn set_exposure(&mut self, exposure: f32) {
-        unsafe {
-            pros_sys::vision_set_exposure(self.port.index(), (exposure * 150.0 / 1.5) as u8);
-        }
-    }
-
-    /// Sets the white balance of the vision sensor.
-    pub fn set_white_balance(&mut self, white_balance: WhiteBalance) {
-        unsafe {
-            match white_balance {
-                WhiteBalance::Auto => pros_sys::vision_set_auto_white_balance(self.port.index(), 1),
-                WhiteBalance::Rgb(rgb) => {
-                    // Turn off automatic white balance
-                    pros_sys::vision_set_auto_white_balance(self.port.index(), 0);
-                    pros_sys::vision_set_white_balance(
-                        self.port.index(),
-                        <Rgb as Into<u32>>::into(rgb) as i32,
-                    )
-                }
-            };
-        }
-    }
-
-    /// Sets the point that object positions are relative to, in other words where (0, 0) is or the zero point.
-    pub fn set_zero_point(&mut self, zero: VisionZeroPoint) {
-        unsafe {
-            pros_sys::vision_set_zero_point(self.port.index(), zero as _);
-        }
-    }
-
-    /// Sets the color of the led.
-    pub fn set_led(&mut self, mode: LedMode) {
-        unsafe {
-            match mode {
-                LedMode::Off => pros_sys::vision_clear_led(self.port.index()),
-                LedMode::On(rgb) => pros_sys::vision_set_led(
-                    self.port.index(),
-                    <Rgb as Into<u32>>::into(rgb) as i32,
-                ),
-            };
-        }
+        Ok(())
     }
 }
 
@@ -137,45 +409,462 @@ impl SmartDevice for VisionSensor {
     }
 }
 
-//TODO: figure out how coordinates are done.
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
-pub struct VisionObject {
-    pub top: i16,
-    pub left: i16,
-    pub middle_x: i16,
-    pub middle_y: i16,
+/// A vision detection color signature.
+///
+/// Vision signatures contain information used by the vision sensor to detect objects of a certain
+/// color. These signatures are typically generated through VEX's vision utility tool rather than
+/// written by hand. For creating signatures using the utility, see [`from_utility`].
+///
+/// [`from_utility`]: VisionSignature::from_utility
+///
+/// # Format & Detection Overview
+///
+/// Vision signatures operate in a version of the Y'UV color space, specifically using the "U" and "V"
+/// chroma components for edge detection purposes. This can be seen in the `u_threshold` and
+/// `v_threshold` fields of this struct. These fields place three "threshold" (min, max, mean)
+/// values on the u and v chroma values detected by the sensor. The values are then transformed to a
+/// 3D lookup table to detect actual colors.
+///
+/// There is additionally a `range` field, which works as a scale factor or threshold for how lenient
+/// edge detection should be.
+///
+/// Signatures can additionally be grouped together into [`VisionCode`]s, which narrow the filter for
+/// object detection by requiring two colors.
+pub struct VisionSignature {
+    /// The signature id.
+    ///
+    /// This number will determine the slot that the signature is placed into when adding it
+    /// to a [`VisionSensor`]'s onboard memory. This value ranges from 1-7. For more information,
+    /// see [`VisionSensor::add_signature`].
+    pub id: NonZeroU8,
 
+    /// The (min, max, mean) values on the "U" axis.
+    ///
+    /// This defines a threshold of values for the sensor to match against a certain chroma in the
+    /// Y'UV color space - speciailly on the U component.
+    pub u_threshold: (i32, i32, i32),
+
+    /// The (min, max, mean) values on the V axis.
+    ///
+    /// This defines a threshold of values for the sensor to match against a certain chroma in the
+    /// Y'UV color space - speciailly on the "V" component.
+    pub v_threshold: (i32, i32, i32),
+
+    /// The signature range scale factor.
+    ///
+    /// This value effectively serves as a threshold for how lenient the sensor should be
+    /// when detecting the edges of colors. This value ranges from 0-11 in Vision Utility.
+    ///
+    /// Higher values of `range` will increase the range of brightness that the sensor will
+    /// consider to be part of the signature. Lighter/Darker shades of the signature's color
+    /// will be detected more often.
+    pub range: f32,
+
+    /// The signature type. Color codes are internally stored as signatures by the sensor,
+    /// meaning this value may be different if the detection signature is stored in a color
+    /// code.
+    pub signature_type: VisionSignatureType,
+}
+
+impl VisionSignature {
+    /// Create a [`VisionSignature`].
+    ///
+    /// # Examples
+    ///
+    /// ````
+    /// // Register a signature for detecting red objects.
+    /// // This numbers in this signature was generated using VEX's vision utility app.
+    /// let my_signature = VisionSignature::new(
+    ///     NonZeroU8::new(1).unwrap(),
+    ///     (10049, 11513, 10781),
+    ///     (-425, 1, -212),
+    ///     4.1,
+    ///     VisionSignatureType::Normal,
+    /// );
+    /// ````
+    pub fn new(
+        id: NonZeroU8,
+        u_threshold: (i32, i32, i32),
+        v_threshold: (i32, i32, i32),
+        range: f32,
+        signature_type: VisionSignatureType,
+    ) -> Self {
+        Self {
+            id,
+            u_threshold,
+            v_threshold,
+            range,
+            signature_type,
+        }
+    }
+
+    /// Create a [`VisionSignature`] using the same format as VEX's Vision Utility tool.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the provided `id` is equal to 0. Signature IDs are internally stored as
+    /// [`NonZeroU8`], and the IDs given by Vision Utility should always be from 1-7.
+    ///
+    /// # Examples
+    ///
+    /// ````
+    /// // Register a signature for detecting red objects.
+    /// // This numbers in this signature was generated using VEX's vision utility app.
+    /// let my_signature =
+    ///     VisionSignature::from_utility(1, 10049, 11513, 10781, -425, 1, -212, 4.1, 0);
+    /// ````
+    pub fn from_utility(
+        id: u8,
+        u_min: i32,
+        u_max: i32,
+        u_mean: i32,
+        v_min: i32,
+        v_max: i32,
+        v_mean: i32,
+        range: f32,
+        signature_type: u32,
+    ) -> Self {
+        Self {
+            // TODO: Should we panic here? Should it return a result with a special error case.
+            id: NonZeroU8::new(id)
+                .expect("Vision utility produced a signature with an invalid ID of 0."),
+            u_threshold: (u_min, u_max, u_mean),
+            v_threshold: (v_min, v_max, v_mean),
+            range,
+            signature_type: signature_type.into(),
+        }
+    }
+}
+
+impl TryFrom<pros_sys::vision_signature_s_t> for VisionSignature {
+    type Error = VisionError;
+
+    /// Convert a raw [`pros_sys::vision_signature_s_t`] struct to a [`VisionSignature`].
+    fn try_from(value: pros_sys::vision_signature_s_t) -> Result<Self, VisionError> {
+        Ok(Self {
+            // TODO: Should we panic here? Should it return a result with a special error case.
+            id: NonZeroU8::new(bail_on!(VISION_OBJECT_ERR_SIG as u8, value.id))
+                .expect("Vision signature IDs must not be 0"),
+            u_threshold: (value.u_min, value.u_max, value.u_mean),
+            v_threshold: (value.v_min, value.v_max, value.v_mean),
+            range: value.range,
+            signature_type: value.r#type.into(),
+        })
+    }
+}
+
+impl From<VisionSignature> for pros_sys::vision_signature_s_t {
+    /// Convert a [`VisionSignature`] to an underlying [`pros_sys::vision_signature_s_t`].
+    ///
+    /// This method will set the [`rgb`] on the generated struct to `0`, since the
+    /// [`VisionSignature`] struct does not store RGB data for a signature.
+    ///
+    /// [`rgb`]: pros_sys::vision_signature_s_t::rgb
+    fn from(value: VisionSignature) -> pros_sys::vision_signature_s_t {
+        pros_sys::vision_signature_s_t {
+            id: value.id.get(),
+            _pad: [0; 3],
+            u_min: value.u_threshold.0,
+            u_max: value.u_threshold.1,
+            u_mean: value.u_threshold.2,
+            v_min: value.v_threshold.0,
+            v_max: value.v_threshold.1,
+            v_mean: value.v_threshold.2,
+            range: value.range,
+            // This seems to be an SDK internal left in the PROS API. PROS leaves their `rgb` field` as 0 when calling
+            // vision_signature_from_utility`, meaning the value likely only exists for telemetry purposes in getters.
+            rgb: 0,
+            r#type: value.signature_type.into(),
+        }
+    }
+}
+
+/// A vision detection code.
+///
+/// Codes are a special type of detection signature that group multiple [`VisionSignature`]s
+/// together. A [`VisionCode`] can associate 2-5 color signatures together, detecting the resulting object
+/// when its color signatures are present close to each other.
+///
+/// These codes work very similarly to [Pixy2 Color Codes](https://docs.pixycam.com/wiki/doku.php?id=wiki:v2:using_color_codes).
+pub struct VisionCode {
+    /// The first signature in the code.
+    pub sig_1: VisionSignature,
+
+    /// The second signature in the code.
+    pub sig_2: VisionSignature,
+
+    /// The third signature in the code.
+    ///
+    /// This signature is optional, and can be omitted if necessary.
+    pub sig_3: Option<VisionSignature>,
+
+    /// The fourth signature in the code.
+    ///
+    /// This signature is optional, and can be omitted if necessary.
+    pub sig_4: Option<VisionSignature>,
+
+    /// The fifth signature in the code.
+    ///
+    /// This signature is optional, and can be omitted if necessary.
+    pub sig_5: Option<VisionSignature>,
+}
+
+// Type aliases to make this part less painful.
+
+type TwoSignatures = (VisionSignature, VisionSignature);
+type ThreeSignatures = (VisionSignature, VisionSignature, VisionSignature);
+type FourSignatures = (
+    VisionSignature,
+    VisionSignature,
+    VisionSignature,
+    VisionSignature,
+);
+type FiveSignatures = (
+    VisionSignature,
+    VisionSignature,
+    VisionSignature,
+    VisionSignature,
+    VisionSignature,
+);
+
+impl VisionCode {
+    /// Creates a new vision code.
+    ///
+    /// Two signatures are required to create a vision code, with an additional three
+    /// optional signatures.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Make some signatures.
+    /// let sig1 = VisionSignature::new(
+    ///     NonZeroU8::new(1).unwrap(),
+    ///     (10049, 11513, 10781),
+    ///     (-425, 1, -212),
+    ///     4.1,
+    ///     VisionSignatureType::Normal,
+    /// );
+    /// let sig2 = VisionSignature::new(
+    ///     NonZeroU8::new(2).unwrap(),
+    ///     (-715,-291, -503),
+    ///     (-4109, -3709, -3909),
+    ///     5.7,
+    ///     VisionSignatureType::Normal,
+    /// );
+    ///
+    /// // Merge our two signatures into a single code.
+    /// let code = VisionCode::new(sig1, sig2, None, None, None);
+    /// ````
+    pub fn new(
+        sig_1: VisionSignature,
+        sig_2: VisionSignature,
+        sig_3: Option<VisionSignature>,
+        sig_4: Option<VisionSignature>,
+        sig_5: Option<VisionSignature>,
+    ) -> Self {
+        Self {
+            sig_1,
+            sig_2,
+            sig_3,
+            sig_4,
+            sig_5,
+        }
+    }
+}
+
+impl From<TwoSignatures> for VisionCode {
+    /// Convert a tuple of two [`VisionSignatures`] into a [`VisionCode`].
+    fn from(signatures: TwoSignatures) -> Self {
+        Self {
+            sig_1: signatures.0,
+            sig_2: signatures.1,
+            sig_3: None,
+            sig_4: None,
+            sig_5: None,
+        }
+    }
+}
+
+impl From<ThreeSignatures> for VisionCode {
+    /// Convert a tuple of three [`VisionSignatures`] into a [`VisionCode`].
+    fn from(signatures: ThreeSignatures) -> Self {
+        Self {
+            sig_1: signatures.0,
+            sig_2: signatures.1,
+            sig_3: Some(signatures.2),
+            sig_4: None,
+            sig_5: None,
+        }
+    }
+}
+
+impl From<FourSignatures> for VisionCode {
+    /// Convert a tuple of four [`VisionSignatures`] into a [`VisionCode`].
+    fn from(signatures: FourSignatures) -> Self {
+        Self {
+            sig_1: signatures.0,
+            sig_2: signatures.1,
+            sig_3: Some(signatures.2),
+            sig_4: Some(signatures.3),
+            sig_5: None,
+        }
+    }
+}
+
+impl From<FiveSignatures> for VisionCode {
+    /// Convert a tuple of five [`VisionSignatures`] into a [`VisionCode`].
+    fn from(signatures: FiveSignatures) -> Self {
+        Self {
+            sig_1: signatures.0,
+            sig_2: signatures.1,
+            sig_3: Some(signatures.2),
+            sig_4: Some(signatures.3),
+            sig_5: Some(signatures.4),
+        }
+    }
+}
+
+/// The type of a vision signature.
+///
+/// Signatures are used to detect objects, and can additionally be associated with each other
+/// to create color codes. This type indicates the type of signature used to detect an object.
+#[repr(u32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VisionSignatureType {
+    /// A normal vision signature not associated with a color code.
+    Normal = pros_sys::E_VISION_OBJECT_NORMAL,
+
+    /// A vision signature associated with a color code.
+    ColorCode = pros_sys::E_VISION_OBJECT_COLOR_CODE,
+
+    /// Unknown use.
+    Line = pros_sys::E_VISION_OBJECT_LINE,
+}
+
+impl From<VisionSignatureType> for pros_sys::vision_object_type_e_t {
+    /// Convert a [`VisionSignatureType`] to an underlying [`pros_sys::vision_object_type_e_t`].
+    fn from(value: VisionSignatureType) -> pros_sys::vision_object_type_e_t {
+        value as _
+    }
+}
+
+impl From<pros_sys::vision_object_type_e_t> for VisionSignatureType {
+    /// Convert a raw [`pros_sys::vision_object_type_e_t`] into a [`VisionSignatureType`].
+    fn from(value: pros_sys::vision_object_type_e_t) -> VisionSignatureType {
+        match value {
+            pros_sys::E_VISION_OBJECT_NORMAL => Self::Normal,
+            pros_sys::E_VISION_OBJECT_COLOR_CODE => Self::ColorCode,
+            pros_sys::E_VISION_OBJECT_LINE => Self::Line,
+
+            // PROS gave us an unexpected value in this case.
+            // TODO: Should this be implemented as TryFrom instead?
+            _ => unreachable!(),
+        }
+    }
+}
+
+/// A detected vision object.
+///
+/// This struct contains metadata about objects detected by the vision sensor. Objects are
+/// detected by calling [`VisionSensor::objects`] after adding signatures and color codes
+/// to the sensor.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct VisionObject {
+    /// The ID of the [`VisionSignature`] used to detect this object.
+    pub signature_id: u16,
+
+    /// The type of signature used to detect this object.
+    pub signature_type: VisionSignatureType,
+
+    /// The horizontal pixel offset from top left point on the camera's field of view.
+    pub x: i16,
+
+    /// The vertical pixel offset from top left point on the camera's field of view.
+    pub y: i16,
+
+    /// The horizontal pixel offset relative to the center of the object from top left point on
+    /// the camera's field of view.
+    pub center_x: i16,
+
+    /// The vertical pixel offset relative to the center of the object from top left point on
+    /// the camera's field of view.
+    pub center_y: i16,
+
+    /// The approximate degrees of rotation of the detected object's bounding box.
+    pub angle: i16,
+
+    /// The width of the detected object's bounding box in pixels.
     pub width: i16,
+
+    /// The height of the detected object's bounding box in pixels.
     pub height: i16,
 }
 
 impl TryFrom<pros_sys::vision_object_s_t> for VisionObject {
     type Error = VisionError;
-    fn try_from(value: pros_sys::vision_object_s_t) -> Result<VisionObject, VisionError> {
-        if value.signature == VISION_OBJECT_ERR_SIG {
-            bail_errno!();
-            unreachable!("Errno should be non-zero")
-        }
 
+    fn try_from(value: pros_sys::vision_object_s_t) -> Result<Self, VisionError> {
         Ok(Self {
-            top: value.top_coord,
-            left: value.left_coord,
-            middle_x: value.x_middle_coord,
-            middle_y: value.y_middle_coord,
+            signature_id: bail_on!(VISION_OBJECT_ERR_SIG, value.signature),
+            signature_type: value.r#type.into(),
+
+            x: value.top_coord,
+            y: value.left_coord,
+
+            center_x: value.x_middle_coord,
+            center_y: value.y_middle_coord,
+
+            angle: value.angle,
+
             width: value.width,
             height: value.height,
         })
     }
 }
 
+impl From<VisionObject> for pros_sys::vision_object_s_t {
+    fn from(value: VisionObject) -> pros_sys::vision_object_s_t {
+        pros_sys::vision_object_s_t {
+            signature: value.signature_id,
+            r#type: value.signature_type.into(),
+            left_coord: value.x,
+            top_coord: value.y,
+            width: value.width,
+            height: value.height,
+            angle: value.angle,
+            x_middle_coord: value.center_x,
+            y_middle_coord: value.center_y,
+        }
+    }
+}
+
+/// Represents a 32-bit RGB color.
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Rgb {
-    r: u8,
-    g: u8,
-    b: u8,
+    /// The red component of the color.
+    ///
+    /// This value ranges from 0-255.
+    pub r: u8,
+
+    /// The green component of the color.
+    ///
+    /// This value ranges from 0-255.
+    pub g: u8,
+
+    /// The blue component of the color.
+    ///
+    /// This value ranges from 0-255.
+    pub b: u8,
 }
 
 impl Rgb {
+    /// Creates a new [`Rgb`] color from an R, G, and B component.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let lavender = Rgb::new(230, 230, 250);
+    /// ```
     pub fn new(r: u8, g: u8, b: u8) -> Self {
         Self { r, g, b }
     }
@@ -188,7 +877,6 @@ impl From<Rgb> for u32 {
 }
 
 const BITMASK: u32 = 0b11111111;
-
 impl From<u32> for Rgb {
     fn from(value: u32) -> Self {
         Self {
@@ -220,23 +908,56 @@ impl From<LcdColor> for Rgb {
     }
 }
 
-#[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum VisionZeroPoint {
-    TopLeft,
-    Center,
+impl From<(u8, u8, u8)> for Rgb {
+    fn from(tuple: (u8, u8, u8)) -> Rgb {
+        Self {
+            r: tuple.0,
+            g: tuple.1,
+            b: tuple.2,
+        }
+    }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+impl From<Rgb> for (u8, u8, u8) {
+    fn from(value: Rgb) -> (u8, u8, u8) {
+        (value.r, value.g, value.b)
+    }
+}
+
+/// Vision Sensor white balance mode.
+///
+/// Represents a white balance configuration for the vision sensor's camera.
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WhiteBalance {
-    Rgb(Rgb),
+    /// Automatic Mode
+    ///
+    /// The sensor will automatically adjust the camera's white balance, using the brightest
+    /// part of the image as a white point.
+    #[default]
     Auto,
+
+    /// Manual Mode
+    ///
+    /// Allows for manual control over white balance using an RGB color.
+    Manual(Rgb),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Vision Sensor LED mode.
+///
+/// Represents the states that the integrated LED indicator on a vision sensor can be in.
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LedMode {
-    On(Rgb),
-    Off,
+    /// Automatic Mode
+    ///
+    /// When in automatic mode, the integrated LED will display the color of the most prominent
+    /// detected object's signature color.
+    #[default]
+    Auto,
+
+    /// Manual Mode
+    ///
+    /// When in manual mode, the integrated LED will display a user-set RGB color code.
+    Manual(Rgb),
 }
 
 #[derive(Debug, Snafu)]
@@ -244,20 +965,23 @@ pub enum VisionError {
     #[snafu(display(
         "The index specified was higher than the total number of objects seen by the camera."
     ))]
-    ReadingFailed,
-    #[snafu(display("The camera could not be read."))]
     IndexTooHigh,
-    #[snafu(display("Port already taken."))]
-    PortTaken,
+    #[snafu(display("The given signature ID or argument is out of range."))]
+    InvalidIdentifier,
+    #[snafu(display("The camera could not be read."))]
+    ReadingFailed,
+    #[snafu(display("Another resource is currently trying to access the port."))]
+    ConcurrentAccess,
     #[snafu(display("{source}"), context(false))]
     Port { source: PortError },
 }
 
 map_errno! {
     VisionError {
-        EHOSTDOWN => Self::ReadingFailed,
+        EHOSTDOWN | EAGAIN => Self::ReadingFailed,
         EDOM => Self::IndexTooHigh,
-        EACCES => Self::PortTaken,
+        EINVAL => Self::InvalidIdentifier,
+        EACCES => Self::ConcurrentAccess,
     }
     inherit PortError;
 }

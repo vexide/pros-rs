@@ -4,11 +4,11 @@
 extern crate alloc;
 
 use alloc::sync::Arc;
-use core::time::Duration;
+use core::{num::NonZeroU8, time::Duration};
 
 use pros::{
     devices::{
-        smart::vision::{LedMode, Rgb, VisionZeroPoint},
+        smart::vision::{LedMode, Rgb},
         Controller,
     },
     prelude::*,
@@ -26,7 +26,7 @@ impl ExampleRobot {
             motor: Arc::new(Mutex::new(
                 Motor::new(peripherals.port_2, BrakeMode::Brake).unwrap(),
             )),
-            vision: VisionSensor::new(peripherals.port_9, VisionZeroPoint::Center).unwrap(),
+            vision: VisionSensor::new(peripherals.port_9),
         }
     }
 }
@@ -48,7 +48,18 @@ impl AsyncRobot for ExampleRobot {
         // Create a controller, specifically controller 1.
         let controller = Controller::Master;
 
-        self.vision.set_led(LedMode::On(Rgb::new(0, 0, 255)));
+        // Change vision LED indicator color to blue.
+        self.vision
+            .set_led_mode(LedMode::Manual(Rgb::new(0, 0, 255)))?;
+
+        // Configure vision sensor to detect red signatures.
+        self.vision.add_signature(VisionSignature::new(
+            NonZeroU8::new(1).unwrap(),
+            (10049, 11513, 10781),
+            (-425, 1, -212),
+            4.1,
+            VisionSignatureType::Normal,
+        ))?;
 
         pros::lcd::buttons::register(left_button_callback, Button::Left);
 
@@ -78,10 +89,7 @@ impl AsyncRobot for ExampleRobot {
                 .set_output(controller.state().joysticks.right.y)?;
 
             // println!("pid out {}", pid.update(10.0, motor.position().into_degrees() as f32));
-            println!(
-                "Vision objs {}",
-                self.vision.nth_largest_object(0)?.middle_x
-            );
+            println!("Vision objs: {:?}", self.vision.objects()?);
 
             // Once again, sleep.
             sleep(Duration::from_millis(20)).await;
