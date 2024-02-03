@@ -15,7 +15,7 @@
     "post-link-args": {
         "ld.lld": [
             "--gc-sections",
-            "--nostdlitrb",
+            "--nostdlib",
             "-Tv5.ld",
             "-Tv5-common.ld",
             "-lpros",

@@ -167,7 +167,11 @@ SECTIONS
    __fini_array_end = .;
 } > RAM
 
-.ARM.attributes 0 : { *(.ARM.attributes) }
+.ARM.attributes : {
+   __ARM.attributes_start = .;
+   *(.ARM.attributes)
+   __ARM.attributes_end = .;
+} > RAM
 
 .sdata : {
    __sdata_start = .;
