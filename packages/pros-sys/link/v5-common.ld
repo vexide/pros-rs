@@ -9,10 +9,11 @@ SECTIONS
 } > HOT_MEMORY
 
 .text : {
+    __text_start = .;
    KEEP (*(.vectors))
    /* boot data should be exactly 32 bytes long */
    *(.boot_data)
-   . = 0x20;
+   . = __text_start + 0x20;
    *(.boot)
    . = ALIGN(64);
    *(.freertos_vectors)
@@ -166,11 +167,7 @@ SECTIONS
    __fini_array_end = .;
 } > RAM
 
-.ARM.attributes : {
-   __ARM.attributes_start = .;
-   *(.ARM.attributes)
-   __ARM.attributes_end = .;
-} > RAM
+.ARM.attributes 0 : { *(.ARM.attributes) }
 
 .sdata : {
    __sdata_start = .;
