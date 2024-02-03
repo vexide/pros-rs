@@ -28,6 +28,7 @@ SECTIONS
    *(.vfp11_veneer)
    *(.ARM.extab)
    *(.gnu.linkonce.armextab.*)
+   __text_end = .;
 } > RAM
 
 .init : {

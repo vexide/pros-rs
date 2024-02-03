@@ -20,6 +20,7 @@
             "-Tv5-common.ld",
             "-lpros",
             "-lc",
+            "-lgcc",
             "-znorelro"
         ]
     },
