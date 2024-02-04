@@ -4,6 +4,5 @@ fn main() {
 
         println!("cargo:rustc-link-search=native={manifest_dir}/link");
         println!("cargo:rustc-link-lib=static=pros");
-        println!("cargo:rustc-link-lib=static=c");
     }
 }
