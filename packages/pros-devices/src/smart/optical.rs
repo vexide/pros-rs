@@ -2,11 +2,11 @@
 
 use core::time::Duration;
 
+use pros_core::{bail_on, error::PortError, map_errno};
 use pros_sys::{OPT_GESTURE_ERR, PROS_ERR, PROS_ERR_F};
 use snafu::Snafu;
 
 use super::{SmartDevice, SmartDeviceType, SmartPort};
-use pros_core::{bail_on, map_errno, error::PortError};
 
 /// The smallest integration time you can set on an optical sensor.
 pub const MIN_INTEGRATION_TIME: Duration = Duration::from_millis(3);

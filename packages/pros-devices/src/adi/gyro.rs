@@ -1,8 +1,9 @@
 //! ADI gyro device.
+
+use pros_core::bail_on;
 use pros_sys::{ext_adi_gyro_t, PROS_ERR, PROS_ERR_F};
 
 use super::{AdiDevice, AdiDeviceType, AdiError, AdiPort};
-use pros_core::bail_on;
 
 #[derive(Debug, Eq, PartialEq)]
 /// ADI gyro device.
