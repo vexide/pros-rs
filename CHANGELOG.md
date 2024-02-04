@@ -40,6 +40,7 @@ Before releasing:
 - The VEXOS target has been updated to improve file size and floating point operation speed. (#81)
 - `Peripherals::new()` is no longer const (**Breaking Change) (#81)
 - Updated panic handler to print to the brain display as well as over serial (#81)
+- Linked libpros through `pros_sys` rather than the vexos target spec. (#85)
 
 ### Removed
 
