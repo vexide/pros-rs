@@ -25,7 +25,6 @@ Before releasing:
 - Added feedforward motor controllers (#80)
 - Lightly document all APIs with missing documentation. (#70)
 - Added `Debug`, `Copy`, and `Clone` derives for common structs (#70)
-
 - Screen drawing API. (#81)
 - Added screen field to `Peripherals` and `DynamicPeripherals::take_screen` method. (#81)
 
@@ -42,6 +41,7 @@ Before releasing:
 - The VEXOS target has been updated to improve file size and floating point operation speed. (#81)
 - `Peripherals::new()` is no longer const (**Breaking Change) (#81)
 - Updated panic handler to print to the brain display as well as over serial (#81)
+- Split the `pros` crate into several smaller subcrates. (#86) (**Breaking Change**)
 
 ### Removed
 
