@@ -197,25 +197,25 @@ impl Controller {
         }
     }
 
-    fn connected(&self) -> Result<bool, ControllerError> {
+    pub fn connected(&self) -> Result<bool, ControllerError> {
         Ok(bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_is_connected(self.id as _)
-        }))
+        }) != 0)
     }
 
-    fn battery_capacity(&self) -> Result<i32, ControllerError> {
+    pub fn battery_capacity(&self) -> Result<i32, ControllerError> {
         Ok(bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_get_battery_capacity(self.id as _)
         }))
     }
 
-    fn battery_level(&self) -> Result<i32, ControllerError> {
+    pub fn battery_level(&self) -> Result<i32, ControllerError> {
         Ok(bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_get_battery_level(self.id as _)
         }))
     }
 
-    fn rumble(&mut self, pattern: &str) -> Result<(), ControllerError> {
+    pub fn rumble(&mut self, pattern: &str) -> Result<(), ControllerError> {
         bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_rumble(
                 self.id as _,
@@ -228,7 +228,7 @@ impl Controller {
         Ok(())
     }
 
-    fn clear_line(&mut self, line: u8) -> Result<(), ControllerError> {
+    pub fn clear_line(&mut self, line: u8) -> Result<(), ControllerError> {
         bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_clear_line(self.id as _, line)
         });
@@ -236,7 +236,7 @@ impl Controller {
         Ok(())
     }
 
-    fn clear_screen(&mut self) -> Result<(), ControllerError> {
+    pub fn clear_screen(&mut self) -> Result<(), ControllerError> {
         bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_clear(self.id as _)
         });
@@ -244,7 +244,7 @@ impl Controller {
         Ok(())
     }
 
-    fn set_text(&mut self, text: &str, line: u8, col: u8) -> Result<(), ControllerError> {
+    pub fn set_text(&mut self, text: &str, line: u8, col: u8) -> Result<(), ControllerError> {
         bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_set_text(
                 self.id as _,
