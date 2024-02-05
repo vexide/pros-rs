@@ -26,7 +26,6 @@ use core::sync::atomic::AtomicBool;
 
 use crate::devices::{
     adi::AdiPort,
-    battery::Battery,
     controller::{Controller, ControllerId},
     screen::Screen,
     smart::SmartPort,
@@ -43,8 +42,6 @@ static PERIPHERALS_TAKEN: AtomicBool = AtomicBool::new(false);
 pub struct Peripherals {
     /// Brain screen
     pub screen: Screen,
-    /// Brain battery
-    pub battery: Battery,
 
     /// Master controller
     pub master_controller: Controller,
@@ -118,7 +115,6 @@ impl Peripherals {
         // SAFETY: caller must ensure that this function is only called once
         unsafe {
             Self {
-                battery: Battery::new(),
                 screen: Screen::new(),
 
                 master_controller: Controller::new(ControllerId::Master),
@@ -191,7 +187,6 @@ impl Peripherals {
 #[derive(Debug)]
 pub struct DynamicPeripherals {
     screen: bool,
-    battery: bool,
     master_controller: bool,
     partner_controller: bool,
     smart_ports: [bool; 21],
@@ -206,7 +201,6 @@ impl DynamicPeripherals {
     pub fn new(_peripherals: Peripherals) -> Self {
         Self {
             screen: false,
-            battery: false,
             master_controller: false,
             partner_controller: false,
             smart_ports: [false; 21],
@@ -271,15 +265,6 @@ impl DynamicPeripherals {
         }
         self.screen = true;
         Some(unsafe { Screen::new() })
-    }
-
-    /// Creates a [`Battery`] only if one has not been created before.
-    pub fn take_battery(&mut self) -> Option<Battery> {
-        if self.battery {
-            return None;
-        }
-        self.battery = true;
-        Some(unsafe { Battery::new() })
     }
 }
 impl From<Peripherals> for DynamicPeripherals {
