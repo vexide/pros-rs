@@ -24,7 +24,13 @@
 
 use core::sync::atomic::AtomicBool;
 
-use crate::devices::{adi::AdiPort, screen::Screen, smart::SmartPort};
+use crate::devices::{
+    adi::AdiPort,
+    screen::Screen,
+    smart::SmartPort,
+    battery::Battery,
+    controller::{Controller, ControllerId},
+};
 
 static PERIPHERALS_TAKEN: AtomicBool = AtomicBool::new(false);
 
@@ -37,6 +43,13 @@ static PERIPHERALS_TAKEN: AtomicBool = AtomicBool::new(false);
 pub struct Peripherals {
     /// Brain screen
     pub screen: Screen,
+    /// Brain battery
+    pub battery: Battery,
+
+    /// Master controller
+    pub master_controller: Controller,
+    /// Partner controller
+    pub partner_controller: Controller,
 
     /// Smart port 1 on the brain
     pub port_1: SmartPort,
@@ -105,7 +118,11 @@ impl Peripherals {
         // SAFETY: caller must ensure that this function is only called once
         unsafe {
             Self {
+                battery: Battery::new(),
                 screen: Screen::new(),
+
+                master_controller: Controller::new(ControllerId::Master),
+                partner_controller: Controller::new(ControllerId::Partner),
 
                 port_1: SmartPort::new(1),
                 port_2: SmartPort::new(2),
@@ -174,6 +191,9 @@ impl Peripherals {
 #[derive(Debug)]
 pub struct DynamicPeripherals {
     screen: bool,
+    battery: bool,
+    master_controller: bool,
+    partner_controller: bool,
     smart_ports: [bool; 21],
     adi_slots: [bool; 8],
 }
@@ -184,12 +204,13 @@ impl DynamicPeripherals {
     /// This guarentees safety because [`Peripherals`] cannot be passed by value
     /// after they have been used to create devices.
     pub fn new(_peripherals: Peripherals) -> Self {
-        let smart_ports = [false; 21];
-        let adi_slots = [false; 8];
         Self {
             screen: false,
-            smart_ports,
-            adi_slots,
+            battery: false,
+            master_controller: false,
+            partner_controller: false,
+            smart_ports: [false; 21],
+            adi_slots: [false; 8],
         }
     }
 
@@ -223,6 +244,26 @@ impl DynamicPeripherals {
         Some(unsafe { AdiPort::new(port_index as u8 + 1, None) })
     }
 
+    /// Creates a [`Controller`] from an ID variant only if one has not been created before.
+    pub fn take_controller(&mut self, id: ControllerId) -> Option<Controller> {
+        match id {
+            ControllerId::Master => {
+                if self.master_controller {
+                    return None;
+                }
+                self.master_controller = true;
+            },
+            ControllerId::Partner => {
+                if self.partner_controller {
+                    return None;
+                }
+                self.partner_controller = true;
+            },
+        }
+
+        Some(unsafe { Controller::new(id) })
+    }
+
     /// Creates a [`Screen`] only if one has not been created before.
     pub fn take_screen(&mut self) -> Option<Screen> {
         if self.screen {
@@ -230,6 +271,15 @@ impl DynamicPeripherals {
         }
         self.screen = true;
         Some(unsafe { Screen::new() })
+    }
+
+    /// Creates a [`Battery`] only if one has not been created before.
+    pub fn take_battery(&mut self) -> Option<Battery> {
+        if self.battery {
+            return None;
+        }
+        self.battery = true;
+        Some(unsafe { Battery::new() })
     }
 }
 impl From<Peripherals> for DynamicPeripherals {
