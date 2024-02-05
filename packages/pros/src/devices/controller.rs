@@ -92,13 +92,13 @@ impl Joystick {
     pub fn x_raw(&self) -> Result<i8, ControllerError> {
         Ok(bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_get_analog(self.id as _, self.x_channel)
-        }))
+        }) as _)
     }
 
     pub fn y_raw(&self) -> Result<i8, ControllerError> {
         Ok(bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_get_analog(self.id as _, self.y_channel)
-        }))
+        }) as _)
     }
 }
 
