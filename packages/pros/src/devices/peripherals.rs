@@ -26,10 +26,10 @@ use core::sync::atomic::AtomicBool;
 
 use crate::devices::{
     adi::AdiPort,
-    screen::Screen,
-    smart::SmartPort,
     battery::Battery,
     controller::{Controller, ControllerId},
+    screen::Screen,
+    smart::SmartPort,
 };
 
 static PERIPHERALS_TAKEN: AtomicBool = AtomicBool::new(false);
@@ -252,13 +252,13 @@ impl DynamicPeripherals {
                     return None;
                 }
                 self.master_controller = true;
-            },
+            }
             ControllerId::Partner => {
                 if self.partner_controller {
                     return None;
                 }
                 self.partner_controller = true;
-            },
+            }
         }
 
         Some(unsafe { Controller::new(id) })
