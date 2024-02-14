@@ -9,6 +9,7 @@ use crate::error::{bail_on, map_errno, PortError};
 pub mod analog;
 pub mod digital;
 
+pub mod addrled;
 pub mod encoder;
 pub mod gyro;
 pub mod linetracker;
@@ -18,6 +19,7 @@ pub mod solenoid;
 pub mod switch;
 pub mod ultrasonic;
 
+pub use addrled::AdiAddrLed;
 pub use analog::AdiAnalogIn;
 pub use digital::{AdiDigitalIn, AdiDigitalOut};
 pub use encoder::AdiEncoder;
