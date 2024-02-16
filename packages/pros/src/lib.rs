@@ -383,6 +383,7 @@ pub mod prelude {
                 gyro::AdiGyro,
                 motor::AdiMotor,
                 potentiometer::{AdiPotentiometer, AdiPotentiometerType},
+                solenoid::AdiSolenoid,
                 ultrasonic::AdiUltrasonic,
                 AdiDevice, AdiPort,
             },
@@ -391,6 +392,7 @@ pub mod prelude {
             screen::{Circle, Line, Rect, Screen, Text, TextFormat, TextPosition, TouchState},
             smart::{
                 distance::DistanceSensor,
+                expander::AdiExpander,
                 gps::GpsSensor,
                 imu::InertialSensor,
                 link::{Link, RxLink, TxLink},

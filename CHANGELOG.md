@@ -28,6 +28,10 @@ Before releasing:
 
 - Screen drawing API. (#81)
 - Added screen field to `Peripherals` and `DynamicPeripherals::take_screen` method. (#81)
+- Added `AdiSolenoid`, a wrapper over `AdiDigitalOut` for actuating SMC pneumatic solenoids. (#61)
+- Added `AdiSwitch`, another `AdiDigitalOut` wrapper that abstracts bumper switches and limit switches. (#61)
+- Added `AdiLineTracker` for abstracting the EDR line tracker sensor.
+- Capability to configure a smart port as a generic serial port and send/recieve data over serial. (#76)
 
 ### Fixed
 
@@ -42,6 +46,15 @@ Before releasing:
 - The VEXOS target has been updated to improve file size and floating point operation speed. (#81)
 - `Peripherals::new()` is no longer const (**Breaking Change) (#81)
 - Updated panic handler to print to the brain display as well as over serial (#81)
+- Refactors digital and analog ADI input/output. (**Breaking Change**) (#61)
+	- Adds LogicLevel rather than bools for controlling digital devices.
+	- Adds 0-5V voltage getters and setters for analog ADI.
+	- Changed analog getters and setters to use `u16` data.
+- Changed `AdiPotentiometer` to return degrees rather than tenth degrees (**Breaking Change**) (#61).
+	- Renamed `AdiPotentiometer::value` to `AdiPotentiometer::angle`.
+- Refactors `AdiMotor` to match the smart motor APIs, having output/raw output getters/setters.
+- Renamed `AdiUltrasonic::value` to `AdiUltrasonic::distance` (**Breaking Change**) (#61).
+- Renamed `AdiEncoder::value` to `AdiEncoder::position` (**Breaking Change**) (#61).
 
 ### Removed
 
@@ -50,6 +63,7 @@ Before releasing:
 - Re-exported printing macros from `pros::io`. (#82)
 - Applied several lints to improve code quality. (#70)
 - Removed the confusingly named `write`, `ewrite`, `writeln`, and `ewriteln` macros. (**Breaking Change**) (#82)
+- Removed AdiDigitalIn::new_press, instead swapping it for AdiSwitch::was_pressed. (**Breaking Change**) (#61)
 
 ## [0.7.0]
 
@@ -68,7 +82,7 @@ Before releasing:
 - All ADI device bindings (#55)
 - `LocalKey` now has `Cell`/`RefCell`-specific methods for setting and taking values. (#42)
 - `Peripherals` and `DynamicPeripherals` structs to ensure that you have only registered one device on a given smart or ADI port. (#53)
-- Capability to configure a smart port as a generic serial port and send/recieve data over serial. (#76)
+- Support for ADI Expander modules with `AdiExpander`. (#63)
 
 ### Fixed
 
