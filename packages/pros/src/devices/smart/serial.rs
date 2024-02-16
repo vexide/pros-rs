@@ -9,6 +9,7 @@ use snafu::Snafu;
 use super::{SmartDevice, SmartDeviceType, SmartPort};
 use crate::error::{bail_on, map_errno, PortError};
 
+/// Represents a smart port configured as a generic serial controller.
 #[derive(Debug, Eq, PartialEq)]
 pub struct SerialPort {
     port: SmartPort,
