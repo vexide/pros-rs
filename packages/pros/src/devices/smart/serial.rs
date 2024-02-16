@@ -254,12 +254,18 @@ impl SmartDevice for SerialPort {
     }
 }
 
+/// Errors that can occur when interacting with a [`SerialPort`].
 #[derive(Debug, Snafu)]
 pub enum SerialError {
-    #[snafu(display("Serious internal write error occurred."))]
+    /// Serious internal write error occurred.
     InternalWriteError,
+
+    /// Generic port related error.
     #[snafu(display("{source}"), context(false))]
-    Port { source: PortError },
+    Port {
+        /// The source of the error.
+        source: PortError,
+    },
 }
 
 map_errno! {

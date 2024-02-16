@@ -25,7 +25,7 @@ impl AsyncRobot for Robot {
         let mut buffer = Vec::new();
 
         loop {
-            self.serial_port.read(&mut buffer);
+            self.serial_port.read(&mut buffer).unwrap();
 
             pros::task::delay(Duration::from_millis(10));
         }
