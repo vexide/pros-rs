@@ -35,6 +35,7 @@ Before releasing:
 ### Fixed
 
 - Fix error handling and error type variats in ADI bindings
+- Give a better error when compiling for an unsupported target.
 
 ### Changed
 
