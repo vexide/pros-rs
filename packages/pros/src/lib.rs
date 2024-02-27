@@ -79,6 +79,10 @@ pub use pros_sys as __pros_sys;
 mod vexos_env;
 #[cfg(target_arch = "wasm32")]
 mod wasm_env;
+
+#[cfg(not(all(target_os = "vexos", target_arch = "wasm32")))]
+compile_error!("You are compiling pros-rs with an unsupported target! Supported targets are armv7a-vexos-eabi and wasm32. If you aren't sure what this means, please compile with `cargo pros`");
+
 #[macro_use]
 pub mod competition;
 pub mod color;
