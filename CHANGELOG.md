@@ -40,6 +40,7 @@ Before releasing:
 - Added `AdiSolenoid`, a wrapper over `AdiDigitalOut` for actuating SMC pneumatic solenoids. (#61)
 - Added `AdiSwitch`, another `AdiDigitalOut` wrapper that abstracts bumper switches and limit switches. (#61)
 - Added `AdiLineTracker` for abstracting the EDR line tracker sensor.
+- Capability to configure a smart port as a generic serial port and send/recieve data over serial. (#76)
 
 ### Fixed
 

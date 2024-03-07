@@ -20,11 +20,14 @@ pub mod optical;
 pub mod rotation;
 pub mod rtos;
 pub mod screen;
+pub mod serial;
 pub mod vision;
 
 use core::ffi::{c_char, c_int, c_void};
 
 pub use adi::*;
+#[cfg(feature = "xapi")]
+pub use apix::*;
 pub use colors::*;
 pub use distance::*;
 pub use error::*;
@@ -38,11 +41,8 @@ pub use optical::*;
 pub use rotation::*;
 pub use rtos::*;
 pub use screen::*;
-#[cfg(feaute = "apix")]
 pub use serial::*;
 pub use vision::*;
-#[cfg(feaute = "apix")]
-pub mod serial;
 
 pub const CLOCKS_PER_SEC: u32 = 1000;
 

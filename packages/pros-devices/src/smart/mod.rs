@@ -28,6 +28,7 @@ pub mod link;
 pub mod motor;
 pub mod optical;
 pub mod rotation;
+pub mod serial;
 pub mod vision;
 
 pub use distance::DistanceSensor;
@@ -39,6 +40,7 @@ pub use motor::Motor;
 pub use optical::OpticalSensor;
 use pros_core::{bail_on, error::PortError};
 pub use rotation::RotationSensor;
+pub use serial::SerialPort;
 pub use vision::VisionSensor;
 
 /// Defines common functionality shared by all smart port devices.
