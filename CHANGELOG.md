@@ -22,10 +22,19 @@ Before releasing:
 ## [Unreleased]
 
 ### Added
+
+### Fixed
+
+### Changed
+
+### Removed
+
+## [0.8.0]
+
+### Added
 - Added feedforward motor controllers (#80)
 - Lightly document all APIs with missing documentation. (#70)
 - Added `Debug`, `Copy`, and `Clone` derives for common structs (#70)
-
 - Screen drawing API. (#81)
 - Added screen field to `Peripherals` and `DynamicPeripherals::take_screen` method. (#81)
 - Added `AdiSolenoid`, a wrapper over `AdiDigitalOut` for actuating SMC pneumatic solenoids. (#61)
@@ -36,6 +45,8 @@ Before releasing:
 ### Fixed
 
 - Fix error handling and error type variats in ADI bindings
+- Fix `AsynRobot` only running opcontrol
+- Properly handle `EADDRINUSE` return for smart port errors (**Breaking Change**) (#97)
 
 ### Changed
 
@@ -55,6 +66,17 @@ Before releasing:
 - Refactors `AdiMotor` to match the smart motor APIs, having output/raw output getters/setters.
 - Renamed `AdiUltrasonic::value` to `AdiUltrasonic::distance` (**Breaking Change**) (#61).
 - Renamed `AdiEncoder::value` to `AdiEncoder::position` (**Breaking Change**) (#61).
+- Repurposed `AdiAnalogOut` as `AdiPwmOut` to correct match port output. (**Breaking Change**) (#90).
+- Moved most device-related constants into their associated struct `impl` (**Breaking Change**) (#98).
+- Renamed IMU_RESET_TIMEOUT to `InertialSensor::CALIBRATION_TIMEOUT` (**Breaking Change**) (#98).
+- Repurposed the `pros` crate as a metapackage without any code of its own. (**Breaking Change**) (#86)
+- Split the pros-rs into several small subcrates. (**Breaking Change**) (#86)
+  - `pros-async` with the async executor and robot trait.
+  - `pros-devices` for device bindings.
+  - `pros-sync` for the sync robot trait.
+  - `pros-core` with basic abstractions over `pros-sys` needed to compile a program to the brain.
+  - `pros-math` with commonly used controllers and other mathematical models.
+  - `pros-panic` for the panic handler implementation.
 
 ### Removed
 
@@ -167,8 +189,9 @@ Before releasing:
 
 ### Removed
 
-[unreleased]: https://github.com/pros-rs/pros-rs/compare/v0.7.0...HEAD
+[unreleased]: https://github.com/pros-rs/pros-rs/compare/v0.8.0...HEAD
 [0.4.0]: https://github.com/pros-rs/pros-rs/releases/tag/v0.4.0
 [0.5.0]: https://github.com/pros-rs/pros-rs/compare/v0.4.0...v0.5.0
 [0.6.0]: https://github.com/pros-rs/pros-rs/compare/v0.5.0...v0.6.0
 [0.7.0]: https://github.com/pros-rs/pros-rs/compare/v0.6.0...v0.7.0
+[0.8.0]: https://github.com/pros-rs/pros-rs/compare/v0.7.0...v0.8.0
