@@ -109,8 +109,8 @@ pub mod prelude {
             motor::{BrakeMode, Gearset, Motor},
             optical::OpticalSensor,
             rotation::RotationSensor,
-            vision::VisionSensor,
             serial::SerialPort,
+            vision::VisionSensor,
             SmartDevice, SmartPort,
         },
     };

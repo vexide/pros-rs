@@ -3,11 +3,11 @@
 //! Provides support for using [`SmartPort`]s as generic serial communication devices.
 
 use no_std_io::io;
+use pros_core::{bail_on, error::PortError, map_errno};
 use pros_sys::PROS_ERR;
 use snafu::Snafu;
 
 use super::{SmartDevice, SmartDeviceType, SmartPort};
-use crate::error::{bail_on, map_errno, PortError};
 
 /// Represents a smart port configured as a generic serial controller.
 #[derive(Debug, Eq, PartialEq)]
@@ -183,7 +183,8 @@ impl io::Read for SerialPort {
             SerialError::InternalWriteError => io::ErrorKind::Other,
             SerialError::Port { source } => match source {
                 PortError::PortOutOfRange => io::ErrorKind::AddrNotAvailable,
-                PortError::PortCannotBeConfigured => io::ErrorKind::AddrInUse,
+                PortError::PortCannotBeConfigured => io::ErrorKind::AlreadyExists,
+                PortError::AlreadyInUse => io::ErrorKind::AddrInUse,
             },
         })?;
 
@@ -207,7 +208,8 @@ impl io::Write for SerialPort {
             SerialError::InternalWriteError => io::ErrorKind::Other,
             SerialError::Port { source } => match source {
                 PortError::PortOutOfRange => io::ErrorKind::AddrNotAvailable,
-                PortError::PortCannotBeConfigured => io::ErrorKind::AddrInUse,
+                PortError::PortCannotBeConfigured => io::ErrorKind::AlreadyExists,
+                PortError::AlreadyInUse => io::ErrorKind::AddrInUse,
             },
         })?;
 
@@ -238,7 +240,8 @@ impl io::Write for SerialPort {
             SerialError::InternalWriteError => io::ErrorKind::Other,
             SerialError::Port { source } => match source {
                 PortError::PortOutOfRange => io::ErrorKind::AddrNotAvailable,
-                PortError::PortCannotBeConfigured => io::ErrorKind::AddrInUse,
+                PortError::PortCannotBeConfigured => io::ErrorKind::AlreadyExists,
+                PortError::AlreadyInUse => io::ErrorKind::AddrInUse,
             },
         })?)
     }
