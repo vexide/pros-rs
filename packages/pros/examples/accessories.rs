@@ -6,15 +6,7 @@ extern crate alloc;
 use alloc::sync::Arc;
 use core::{num::NonZeroU8, time::Duration};
 
-use pros::{
-    devices::{
-        smart::vision::{LedMode, Rgb},
-        Controller,
-    },
-    prelude::*,
-    sync::Mutex,
-    task::delay,
-};
+use pros::{core::sync::Mutex, prelude::*};
 
 struct ExampleRobot {
     motor: Arc<Mutex<Motor>>,
@@ -32,7 +24,7 @@ impl ExampleRobot {
 }
 
 impl AsyncRobot for ExampleRobot {
-    async fn opcontrol(&mut self) -> pros::Result {
+    async fn opcontrol(&mut self) -> Result {
         let handle = pros::async_runtime::spawn(async {
             for _ in 0..5 {
                 println!("Hello from async!");
@@ -61,10 +53,8 @@ impl AsyncRobot for ExampleRobot {
             VisionSignatureType::Normal,
         ))?;
 
-        pros::lcd::buttons::register(left_button_callback, Button::Left);
-
         // Spawn a new task that will print whether or not the motor is stopped constantly.
-        spawn({
+        pros_core::task::spawn({
             let motor = Arc::clone(&self.motor); // Obtain a shared reference to our motor to safely share between tasks.
 
             move || loop {
@@ -86,7 +76,7 @@ impl AsyncRobot for ExampleRobot {
             // Set output takes a float from -1 to 1 that is scaled to -12 to 12 volts.
             self.motor
                 .lock()
-                .set_output(controller.state().joysticks.right.y)?;
+                .set_output(controller.state()?.joysticks.right.y)?;
 
             // println!("pid out {}", pid.update(10.0, motor.position().into_degrees() as f32));
             println!("Vision objs: {:?}", self.vision.objects()?);
@@ -100,7 +90,3 @@ async_robot!(
     ExampleRobot,
     ExampleRobot::new(Peripherals::take().unwrap())
 );
-
-fn left_button_callback() {
-    println!("Left button pressed!");
-}
