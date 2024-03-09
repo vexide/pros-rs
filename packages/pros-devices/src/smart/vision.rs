@@ -30,19 +30,6 @@ use snafu::Snafu;
 use super::{SmartDevice, SmartDeviceType, SmartPort};
 use crate::color::Rgb;
 
-/// The horizontal resolution of the vision sensor.
-///
-/// This value is based on the `VISION_FOV_WIDTH` macro constant in PROS.
-pub const VISION_RESOLUTION_WIDTH: u16 = 316;
-
-/// The vertical resolution of the vision sensor.
-///
-/// This value is based on the `VISION_FOV_HEIGHT` macro constant in PROS.
-pub const VISION_RESOLUTION_HEIGHT: u16 = 212;
-
-/// The update rate of the vision sensor.
-pub const VISION_UPDATE_RATE: Duration = Duration::from_millis(50);
-
 /// VEX Vision Sensor
 ///
 /// This struct represents a vision sensor plugged into a smart port.
@@ -52,6 +39,19 @@ pub struct VisionSensor {
 }
 
 impl VisionSensor {
+    /// The horizontal resolution of the vision sensor.
+    ///
+    /// This value is based on the `VISION_FOV_WIDTH` macro constant in PROS.
+    pub const RESOLUTION_WIDTH: u16 = 316;
+
+    /// The vertical resolution of the vision sensor.
+    ///
+    /// This value is based on the `VISION_FOV_HEIGHT` msacro constant in PROS.
+    pub const RESOLUTION_HEIGHT: u16 = 212;
+
+    /// The update rate of the vision sensor.
+    pub const UPDATE_RATE: Duration = Duration::from_millis(50);
+
     /// Creates a new vision sensor on a smart port.
     ///
     /// # Examples
