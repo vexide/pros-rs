@@ -8,7 +8,11 @@ use alloc::ffi::CString;
 use pros_core::{bail_on, map_errno};
 use pros_sys::{E_CONTROLLER_MASTER, E_CONTROLLER_PARTNER, PROS_ERR};
 use snafu::Snafu;
-use crate::adi::digital::LogicLevel;
+
+use crate::{
+    adi::digital::LogicLevel,
+    competition::{self, CompetitionMode},
+};
 
 /// Digital Controller Button
 #[derive(Debug, Eq, PartialEq)]
@@ -20,6 +24,10 @@ pub struct Button {
 impl Button {
     /// Gets the current logic level of a digital input pin.
     pub fn level(&self) -> Result<LogicLevel, ControllerError> {
+        if competition::mode() != CompetitionMode::Opcontrol {
+            return Err(ControllerError::CompetitionControl);
+        }
+
         let value = bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_get_digital(self.id as _, self.channel)
         }) != 0;
@@ -37,7 +45,6 @@ impl Button {
         Ok(self.level()?.is_high())
     }
 
-
     /// Returns `true` if the button has been pressed again since the last time this
     /// function was called.
     ///
@@ -52,6 +59,10 @@ impl Button {
     /// use-case for this function is to call inside opcontrol to detect new button
     /// presses, and not in any other tasks.
     pub fn was_pressed(&mut self) -> Result<bool, ControllerError> {
+        if competition::mode() != CompetitionMode::Opcontrol {
+            return Err(ControllerError::CompetitionControl);
+        }
+
         Ok(bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_get_digital_new_press(self.id as _, self.channel)
         }) == 1)
@@ -70,26 +81,28 @@ pub struct Joystick {
 
 impl Joystick {
     pub fn x(&self) -> Result<f32, ControllerError> {
-        Ok(bail_on!(PROS_ERR, unsafe {
-            pros_sys::controller_get_analog(self.id as _, self.x_channel)
-        }) as f32
-            / 127.0)
+        Ok(self.x_raw()? as f32 / 127.0)
     }
 
     pub fn y(&self) -> Result<f32, ControllerError> {
-        Ok(bail_on!(PROS_ERR, unsafe {
-            pros_sys::controller_get_analog(self.id as _, self.y_channel)
-        }) as f32
-            / 127.0)
+        Ok(self.y_raw()? as f32 / 127.0)
     }
 
     pub fn x_raw(&self) -> Result<i8, ControllerError> {
+        if competition::mode() != CompetitionMode::Opcontrol {
+            return Err(ControllerError::CompetitionControl);
+        }
+
         Ok(bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_get_analog(self.id as _, self.x_channel)
         }) as _)
     }
 
     pub fn y_raw(&self) -> Result<i8, ControllerError> {
+        if competition::mode() != CompetitionMode::Opcontrol {
+            return Err(ControllerError::CompetitionControl);
+        }
+
         Ok(bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_get_analog(self.id as _, self.y_channel)
         }) as _)
@@ -279,6 +292,9 @@ pub enum ControllerError {
 
     /// CString::new encountered NULL (U+0000) byte in non-terminating position.
     NonTerminatingNul,
+
+    /// Access to controller data is restricted by competition control.
+    CompetitionControl,
 }
 
 map_errno! {
