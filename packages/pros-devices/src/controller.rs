@@ -8,10 +8,9 @@ use alloc::ffi::CString;
 use pros_core::{bail_on, map_errno};
 use pros_sys::{E_CONTROLLER_MASTER, E_CONTROLLER_PARTNER, PROS_ERR};
 use snafu::Snafu;
+use crate::adi::digital::LogicLevel;
 
-pub const CONTROLLER_MAX_LINE_LENGTH: usize = 14;
-pub const CONTROLLER_MAX_LINES: usize = 2;
-
+/// Digital Controller Button
 #[derive(Debug, Eq, PartialEq)]
 pub struct Button {
     id: ControllerId,
@@ -19,47 +18,44 @@ pub struct Button {
 }
 
 impl Button {
-    pub fn pressed(&self) -> Result<bool, ControllerError> {
-        Ok(bail_on!(PROS_ERR, unsafe {
+    /// Gets the current logic level of a digital input pin.
+    pub fn level(&self) -> Result<LogicLevel, ControllerError> {
+        let value = bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_get_digital(self.id as _, self.channel)
-        }) == 1)
+        }) != 0;
+
+        Ok(match value {
+            true => LogicLevel::High,
+            false => LogicLevel::Low,
+        })
     }
 
-    pub fn pressed_again(&mut self) -> Result<bool, ControllerError> {
+    /// Returrns `true` if the button is currently being pressed.
+    ///
+    /// This is equivalent shorthand to calling `Self::level().is_high()`.
+    pub fn is_pressed(&self) -> Result<bool, ControllerError> {
+        Ok(self.level()?.is_high())
+    }
+
+
+    /// Returns `true` if the button has been pressed again since the last time this
+    /// function was called.
+    ///
+    /// # Thread Safety
+    ///
+    /// This function is not thread-safe.
+    ///
+    /// Multiple tasks polling a single button may return different results under the
+    /// same circumstances, so only one task should call this function for any given
+    /// switch. E.g., Task A calls this function for buttons 1 and 2. Task B may call
+    /// this function for button 3, but should not for buttons 1 or 2. A typical
+    /// use-case for this function is to call inside opcontrol to detect new button
+    /// presses, and not in any other tasks.
+    pub fn was_pressed(&mut self) -> Result<bool, ControllerError> {
         Ok(bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_get_digital_new_press(self.id as _, self.channel)
         }) == 1)
     }
-}
-/// Holds whether or not the buttons on the controller are pressed or not
-#[derive(Debug, Eq, PartialEq)]
-pub struct Buttons {
-    /// The 'A' button on the right button pad of the controller.
-    pub a: Button,
-    /// The 'B' button on the right button pad of the controller.
-    pub b: Button,
-    /// The 'X' button on the right button pad of the controller.
-    pub x: Button,
-    /// The 'Y' button on the right button pad of the controller.
-    pub y: Button,
-
-    /// The up arrow on the left arrow pad of the controller.
-    pub up: Button,
-    /// The down arrow on the left arrow pad of the controller.
-    pub down: Button,
-    /// The left arrow on the left arrow pad of the controller.
-    pub left: Button,
-    /// The right arrow on the left arrow pad of the controller.
-    pub right: Button,
-
-    /// The top trigger on the left side of the controller.
-    pub left_trigger_1: Button,
-    /// The bottom trigger on the left side of the controller.
-    pub left_trigger_2: Button,
-    /// The top trigger on the right side of the controller.
-    pub right_trigger_1: Button,
-    /// The bottom trigger on the right side of the controller.
-    pub right_trigger_2: Button,
 }
 
 /// Stores how far the joystick is away from the center (at *(0, 0)*) from -1 to 1.
@@ -100,132 +96,38 @@ impl Joystick {
     }
 }
 
-/// Stores both joysticks on the controller.
-#[derive(Debug, Eq, PartialEq)]
-pub struct Joysticks {
-    /// Left joystick
-    pub left: Joystick,
-    /// Right joystick
-    pub right: Joystick,
-}
-
 /// The basic type for a controller.
 /// Used to get the state of its joysticks and controllers.
 #[derive(Debug, Eq, PartialEq)]
 pub struct Controller {
     id: ControllerId,
-    pub joysticks: Joysticks,
-    /// Digital buttons state
-    pub buttons: Buttons,
+
+    pub screen: ControllerScreen,
+
+    pub left_stick: Joystick,
+    pub right_stick: Joystick,
+
+    pub button_a: Button,
+    pub button_b: Button,
+    pub button_x: Button,
+    pub button_y: Button,
+    pub button_up: Button,
+    pub button_down: Button,
+    pub button_left: Button,
+    pub button_right: Button,
+
+    pub left_trigger_1: Button,
+    pub left_trigger_2: Button,
+    pub right_trigger_1: Button,
+    pub right_trigger_2: Button,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u32)]
-pub enum ControllerId {
-    Master = E_CONTROLLER_MASTER,
-    Partner = E_CONTROLLER_PARTNER,
+#[derive(Debug, Eq, PartialEq)]
+pub struct ControllerScreen {
+    id: ControllerId,
 }
 
-impl Controller {
-    pub const unsafe fn new(id: ControllerId) -> Self {
-        Self {
-            id,
-            joysticks: Joysticks {
-                left: Joystick {
-                    id,
-                    x_channel: pros_sys::E_CONTROLLER_ANALOG_LEFT_X,
-                    y_channel: pros_sys::E_CONTROLLER_ANALOG_LEFT_Y,
-                },
-                right: Joystick {
-                    id,
-                    x_channel: pros_sys::E_CONTROLLER_ANALOG_RIGHT_X,
-                    y_channel: pros_sys::E_CONTROLLER_ANALOG_RIGHT_Y,
-                },
-            },
-            buttons: Buttons {
-                a: Button {
-                    id,
-                    channel: pros_sys::E_CONTROLLER_DIGITAL_A,
-                },
-                b: Button {
-                    id,
-                    channel: pros_sys::E_CONTROLLER_DIGITAL_B,
-                },
-                x: Button {
-                    id,
-                    channel: pros_sys::E_CONTROLLER_DIGITAL_X,
-                },
-                y: Button {
-                    id,
-                    channel: pros_sys::E_CONTROLLER_DIGITAL_Y,
-                },
-                up: Button {
-                    id,
-                    channel: pros_sys::E_CONTROLLER_DIGITAL_UP,
-                },
-                down: Button {
-                    id,
-                    channel: pros_sys::E_CONTROLLER_DIGITAL_DOWN,
-                },
-                left: Button {
-                    id,
-                    channel: pros_sys::E_CONTROLLER_DIGITAL_LEFT,
-                },
-                right: Button {
-                    id,
-                    channel: pros_sys::E_CONTROLLER_DIGITAL_RIGHT,
-                },
-                left_trigger_1: Button {
-                    id,
-                    channel: pros_sys::E_CONTROLLER_DIGITAL_L1,
-                },
-                left_trigger_2: Button {
-                    id,
-                    channel: pros_sys::E_CONTROLLER_DIGITAL_L2,
-                },
-                right_trigger_1: Button {
-                    id,
-                    channel: pros_sys::E_CONTROLLER_DIGITAL_R2,
-                },
-                right_trigger_2: Button {
-                    id,
-                    channel: pros_sys::E_CONTROLLER_DIGITAL_R2,
-                },
-            },
-        }
-    }
-
-    pub fn connected(&self) -> Result<bool, ControllerError> {
-        Ok(bail_on!(PROS_ERR, unsafe {
-            pros_sys::controller_is_connected(self.id as _)
-        }) != 0)
-    }
-
-    pub fn battery_capacity(&self) -> Result<i32, ControllerError> {
-        Ok(bail_on!(PROS_ERR, unsafe {
-            pros_sys::controller_get_battery_capacity(self.id as _)
-        }))
-    }
-
-    pub fn battery_level(&self) -> Result<i32, ControllerError> {
-        Ok(bail_on!(PROS_ERR, unsafe {
-            pros_sys::controller_get_battery_level(self.id as _)
-        }))
-    }
-
-    pub fn rumble(&mut self, pattern: &str) -> Result<(), ControllerError> {
-        bail_on!(PROS_ERR, unsafe {
-            pros_sys::controller_rumble(
-                self.id as _,
-                CString::new(pattern)
-                    .map_err(|_| ControllerError::NonTerminatingNul)?
-                    .into_raw(),
-            )
-        });
-
-        Ok(())
-    }
-
+impl ControllerScreen {
     pub fn clear_line(&mut self, line: u8) -> Result<(), ControllerError> {
         bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_clear_line(self.id as _, line)
@@ -249,6 +151,114 @@ impl Controller {
                 line,
                 col,
                 CString::new(text)
+                    .map_err(|_| ControllerError::NonTerminatingNul)?
+                    .into_raw(),
+            )
+        });
+
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
+pub enum ControllerId {
+    Master = E_CONTROLLER_MASTER,
+    Partner = E_CONTROLLER_PARTNER,
+}
+
+impl Controller {
+    pub const MAX_LINE_LENGTH: usize = 14;
+    pub const MAX_LINES: usize = 2;
+
+    pub const unsafe fn new(id: ControllerId) -> Self {
+        Self {
+            id,
+            screen: ControllerScreen { id },
+            left_stick: Joystick {
+                id,
+                x_channel: pros_sys::E_CONTROLLER_ANALOG_LEFT_X,
+                y_channel: pros_sys::E_CONTROLLER_ANALOG_LEFT_Y,
+            },
+            right_stick: Joystick {
+                id,
+                x_channel: pros_sys::E_CONTROLLER_ANALOG_RIGHT_X,
+                y_channel: pros_sys::E_CONTROLLER_ANALOG_RIGHT_Y,
+            },
+            button_a: Button {
+                id,
+                channel: pros_sys::E_CONTROLLER_DIGITAL_A,
+            },
+            button_b: Button {
+                id,
+                channel: pros_sys::E_CONTROLLER_DIGITAL_B,
+            },
+            button_x: Button {
+                id,
+                channel: pros_sys::E_CONTROLLER_DIGITAL_X,
+            },
+            button_y: Button {
+                id,
+                channel: pros_sys::E_CONTROLLER_DIGITAL_Y,
+            },
+            button_up: Button {
+                id,
+                channel: pros_sys::E_CONTROLLER_DIGITAL_UP,
+            },
+            button_down: Button {
+                id,
+                channel: pros_sys::E_CONTROLLER_DIGITAL_DOWN,
+            },
+            button_left: Button {
+                id,
+                channel: pros_sys::E_CONTROLLER_DIGITAL_LEFT,
+            },
+            button_right: Button {
+                id,
+                channel: pros_sys::E_CONTROLLER_DIGITAL_RIGHT,
+            },
+            left_trigger_1: Button {
+                id,
+                channel: pros_sys::E_CONTROLLER_DIGITAL_L1,
+            },
+            left_trigger_2: Button {
+                id,
+                channel: pros_sys::E_CONTROLLER_DIGITAL_L2,
+            },
+            right_trigger_1: Button {
+                id,
+                channel: pros_sys::E_CONTROLLER_DIGITAL_R2,
+            },
+            right_trigger_2: Button {
+                id,
+                channel: pros_sys::E_CONTROLLER_DIGITAL_R2,
+            },
+        }
+    }
+
+    pub fn is_connected(&self) -> Result<bool, ControllerError> {
+        Ok(bail_on!(PROS_ERR, unsafe {
+            pros_sys::controller_is_connected(self.id as _)
+        }) != 0)
+    }
+
+    pub fn battery_capacity(&self) -> Result<i32, ControllerError> {
+        Ok(bail_on!(PROS_ERR, unsafe {
+            pros_sys::controller_get_battery_capacity(self.id as _)
+        }))
+    }
+
+    pub fn battery_level(&self) -> Result<i32, ControllerError> {
+        Ok(bail_on!(PROS_ERR, unsafe {
+            pros_sys::controller_get_battery_level(self.id as _)
+        }))
+    }
+
+    pub fn rumble(&mut self, pattern: &str) -> Result<(), ControllerError> {
+        bail_on!(PROS_ERR, unsafe {
+            pros_sys::controller_rumble(
+                self.id as _,
+                CString::new(pattern)
                     .map_err(|_| ControllerError::NonTerminatingNul)?
                     .into_raw(),
             )
