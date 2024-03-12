@@ -16,12 +16,11 @@
         "gcc": [
             "-nostartfiles",
             "-nostdlib",
-            "-Wl,-Tv5.ld,-Tv5-common.ld,--gc-sections",
-            "-Wl,--start-group,-lgcc,-lpros,-lc,--end-group"
+            "-Wl,-Tv5.ld,-Tv5-common.ld",
+            "--gc-sections"
         ]
     },
     "relocation-model": "static",
-    "target-family": "unix",
     "target-pointer-width": "32",
     "os": "vexos",
     "vendor": "vex"

@@ -27,6 +27,8 @@ Before releasing:
 
 ### Changed
 
+- Linked libpros through `pros_sys` rather than the vexos target spec. (#85)
+
 ### Removed
 
 ## [0.8.0]

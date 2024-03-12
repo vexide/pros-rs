@@ -21,9 +21,3 @@ doctest = false
 [features]
 xapi = []
 no-link = []
-
-[build-dependencies]
-cfg-if = "1.0"
-
-[dependencies]
-cfg-if = "1.0"
