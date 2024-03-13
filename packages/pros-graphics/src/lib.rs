@@ -16,13 +16,13 @@ use embedded_graphics_core::{
 };
 use pros_devices::{color::Rgb, Screen};
 
-/// An embedded_graphics driver for the Brain display
-pub struct VexDisplay {
+/// An embedded_graphics driver for the V5 Brain display
+pub struct V5BrainDisplay {
     pixel_buffer:
         Box<[u32; Screen::HORIZONTAL_RESOLUTION as usize * Screen::VERTICAL_RESOLUTION as usize]>,
 }
 
-impl VexDisplay {
+impl V5BrainDisplay {
     /// Creates a new VexDisplay from a Screen
     pub fn new(_screen: Screen) -> Self {
         let pixel_buffer = Box::new_zeroed();
@@ -52,13 +52,13 @@ impl VexDisplay {
     }
 }
 
-impl From<Screen> for VexDisplay {
+impl From<Screen> for V5BrainDisplay {
     fn from(value: Screen) -> Self {
         Self::new(value)
     }
 }
 
-impl Dimensions for VexDisplay {
+impl Dimensions for V5BrainDisplay {
     fn bounding_box(&self) -> Rectangle {
         Rectangle::new(
             Point::new(0, 0),
@@ -70,7 +70,7 @@ impl Dimensions for VexDisplay {
     }
 }
 
-impl DrawTarget for VexDisplay {
+impl DrawTarget for V5BrainDisplay {
     type Color = Rgb888;
     type Error = pros_devices::screen::ScreenError;
 

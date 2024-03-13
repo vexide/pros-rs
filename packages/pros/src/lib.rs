@@ -120,7 +120,7 @@ pub mod prelude {
         },
     };
     #[cfg(feature = "graphics")]
-    pub use pros_graphics::VexDisplay;
+    pub use pros_graphics::V5BrainDisplay;
     #[cfg(feature = "math")]
     pub use pros_math::{feedforward::MotorFeedforwardController, pid::PidController};
     #[cfg(feature = "sync")]
