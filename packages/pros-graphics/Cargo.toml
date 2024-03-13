@@ -1,0 +1,19 @@
+[package]
+name = "pros-graphics"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Core functionality for pros-rs"
+keywords = ["PROS", "Robotics", "graphics", "vex", "v5"]
+categories = [
+    "api-bindings",
+    "no-std",
+    "science::robotics",
+]
+
+[dependencies]
+embedded-graphics-core = "0.4.0"
+pros-devices = { version = "0.1.0", path = "../pros-devices" }
+
+[lints]
+workspace = true
