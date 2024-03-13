@@ -61,6 +61,8 @@ pub use pros_async as async_runtime;
 pub use pros_core as core;
 #[cfg(feature = "devices")]
 pub use pros_devices as devices;
+#[cfg(feature = "graphics")]
+pub use pros_graphics as graphics;
 #[cfg(feature = "math")]
 pub use pros_math as math;
 #[cfg(feature = "panic")]
@@ -82,6 +84,10 @@ pub mod prelude {
         print, println,
         task::delay,
     };
+    #[cfg(all(not(feature = "graphics"), feature = "devices"))]
+    pub use pros_devices::screen::{
+        Circle, Line, Rect, Text, TextFormat, TextPosition, TouchState,
+    };
     #[cfg(feature = "devices")]
     pub use pros_devices::{
         adi::{
@@ -99,7 +105,7 @@ pub mod prelude {
         color::Rgb,
         peripherals::{DynamicPeripherals, Peripherals},
         position::Position,
-        screen::{Circle, Line, Rect, Screen, Text, TextFormat, TextPosition, TouchState},
+        screen::Screen,
         smart::{
             distance::DistanceSensor,
             expander::AdiExpander,
@@ -113,6 +119,8 @@ pub mod prelude {
             SmartDevice, SmartPort,
         },
     };
+    #[cfg(feature = "graphics")]
+    pub use pros_graphics::V5BrainDisplay;
     #[cfg(feature = "math")]
     pub use pros_math::{feedforward::MotorFeedforwardController, pid::PidController};
     #[cfg(feature = "sync")]
