@@ -14,6 +14,7 @@ categories = [
 [dependencies]
 embedded-graphics-core = "0.4.0"
 pros-devices = { version = "0.1.0", path = "../pros-devices" }
+pros-sys = { version = "0.7.0", path = "../pros-sys" }
 
 [lints]
 workspace = true

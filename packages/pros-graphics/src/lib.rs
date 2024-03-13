@@ -1,6 +1,11 @@
 //! An embedded_graphics driver for VEX V5 Brain displays.
 //! Implemented for the [`pros-rs`](https://crates.io/crates/pros) ecosystem and implemented using [pros-devices](https://crates.io/crates/pros-devices).
 #![no_std]
+#![feature(new_uninit)]
+
+extern crate alloc;
+
+use alloc::boxed::Box;
 
 use embedded_graphics_core::{
     draw_target::DrawTarget,
@@ -14,16 +19,32 @@ use pros_devices::{color::Rgb, Screen};
 /// An embedded_graphics driver for the Brain display
 pub struct VexDisplay {
     screen: Screen,
-    pixel_buffer: [[Rgb; Screen::HORIZONTAL_RESOLUTION as _]; Screen::VERTICAL_RESOLUTION as _],
+    pixel_buffer:
+        Box<[u32; Screen::HORIZONTAL_RESOLUTION as usize * Screen::VERTICAL_RESOLUTION as usize]>,
 }
 
 impl VexDisplay {
     /// Creates a new VexDisplay from a Screen
-    pub const fn new(screen: Screen) -> Self {
+    pub fn new(screen: Screen) -> Self {
+        let pixel_buffer = Box::new_zeroed();
+        let pixel_buffer = unsafe { pixel_buffer.assume_init() };
+
         Self {
             screen,
-            pixel_buffer: [[Rgb::new(0, 0, 0); Screen::HORIZONTAL_RESOLUTION as _];
-                Screen::VERTICAL_RESOLUTION as _],
+            pixel_buffer,
+        }
+    }
+
+    unsafe fn draw_buffer(&self) {
+        unsafe {
+            pros_sys::screen_copy_area(
+                0,
+                0,
+                Screen::HORIZONTAL_RESOLUTION,
+                Screen::VERTICAL_RESOLUTION,
+                self.pixel_buffer.as_ptr(),
+                Screen::HORIZONTAL_RESOLUTION as _,
+            );
         }
     }
 }
@@ -62,18 +83,15 @@ impl DrawTarget for VexDisplay {
                 if !(pos.x > Screen::HORIZONTAL_RESOLUTION as _ || pos.x < 0)
                     && !(pos.y > Screen::VERTICAL_RESOLUTION as _ || pos.y < 0)
                 {
-                    self.pixel_buffer[pos.y as usize][pos.x as usize] = color
+                    // SAFETY: We initialize the buffer with zeroes, so it's safe to assume it's initialized.
+                    self.pixel_buffer[(pos.y as usize * Screen::HORIZONTAL_RESOLUTION as usize)
+                        + pos.x as usize] = color.into();
                 }
             });
 
-        self.screen.draw_buffer(
-            0,
-            0,
-            Screen::HORIZONTAL_RESOLUTION,
-            Screen::VERTICAL_RESOLUTION,
-            self.pixel_buffer.clone().into_iter().flatten(),
-            Screen::HORIZONTAL_RESOLUTION as _,
-        )?;
+        unsafe {
+            self.draw_buffer();
+        }
         Ok(())
     }
 }
