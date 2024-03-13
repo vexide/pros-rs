@@ -9,10 +9,7 @@ use embedded_graphics_core::{
     primitives::Rectangle,
     Pixel,
 };
-use pros_devices::{
-    color::Rgb,
-    Screen,
-};
+use pros_devices::{color::Rgb, Screen};
 
 /// An embedded_graphics driver for the Brain display
 pub struct VexDisplay {
