@@ -18,24 +18,27 @@ use pros_devices::{color::Rgb, Screen};
 
 /// An embedded_graphics driver for the Brain display
 pub struct VexDisplay {
-    screen: Screen,
     pixel_buffer:
         Box<[u32; Screen::HORIZONTAL_RESOLUTION as usize * Screen::VERTICAL_RESOLUTION as usize]>,
 }
 
 impl VexDisplay {
     /// Creates a new VexDisplay from a Screen
-    pub fn new(screen: Screen) -> Self {
+    pub fn new(_screen: Screen) -> Self {
         let pixel_buffer = Box::new_zeroed();
         let pixel_buffer = unsafe { pixel_buffer.assume_init() };
 
-        Self {
-            screen,
-            pixel_buffer,
-        }
+        Self { pixel_buffer }
     }
 
-    unsafe fn draw_buffer(&self) {
+    /// Draws the pixel buffer to the screen
+    ///
+    /// # Note
+    ///
+    /// I would use the [`Screen::draw_buffer`](pros_devices::screen::Screen::draw_buffer) API,
+    /// but unfortunately it stack overflows with a buffer this big and is more complicated.
+    fn draw_buffer(&self) {
+        // SAFETY: The pixel buffer is guarenteed to be large enough and live long enough and we take ownership of the screen when created.
         unsafe {
             pros_sys::screen_copy_area(
                 0,
@@ -84,14 +87,13 @@ impl DrawTarget for VexDisplay {
                     && !(pos.y > Screen::VERTICAL_RESOLUTION as _ || pos.y < 0)
                 {
                     // SAFETY: We initialize the buffer with zeroes, so it's safe to assume it's initialized.
-                    self.pixel_buffer[(pos.y as usize * Screen::HORIZONTAL_RESOLUTION as usize)
+                    self.pixel_buffer[pos.y as usize * Screen::HORIZONTAL_RESOLUTION as usize
                         + pos.x as usize] = color.into();
                 }
             });
 
-        unsafe {
-            self.draw_buffer();
-        }
+        self.draw_buffer();
+
         Ok(())
     }
 }
