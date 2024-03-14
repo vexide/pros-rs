@@ -36,7 +36,9 @@ async = ["dep:pros-async"]
 sync = ["dep:pros-sync"]
 
 devices = ["dep:pros-devices"]
+
 graphics = ["dep:pros-graphics"]
+embedded-graphics = ["pros-graphics/embedded-graphics"]
 
 math = ["dep:pros-math"]
 
