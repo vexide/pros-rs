@@ -119,8 +119,8 @@ pub mod prelude {
             SmartDevice, SmartPort,
         },
     };
-    #[cfg(feature = "graphics")]
-    pub use pros_graphics::V5BrainDisplay;
+    #[cfg(all(feature = "graphics", feature = "embedded-graphics"))]
+    pub use pros_graphics::embedded_graphics::V5BrainDisplay;
     #[cfg(feature = "math")]
     pub use pros_math::{feedforward::MotorFeedforwardController, pid::PidController};
     #[cfg(feature = "sync")]
