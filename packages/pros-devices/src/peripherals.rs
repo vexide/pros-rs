@@ -44,7 +44,7 @@ pub struct Peripherals {
     pub screen: Screen,
 
     /// Master controller
-    pub master_controller: Controller,
+    pub primary_controller: Controller,
     /// Partner controller
     pub partner_controller: Controller,
 
@@ -117,7 +117,7 @@ impl Peripherals {
             Self {
                 screen: Screen::new(),
 
-                master_controller: Controller::new(ControllerId::Master),
+                primary_controller: Controller::new(ControllerId::Primary),
                 partner_controller: Controller::new(ControllerId::Partner),
 
                 port_1: SmartPort::new(1),
@@ -241,7 +241,7 @@ impl DynamicPeripherals {
     /// Creates a [`Controller`] from an ID variant only if one has not been created before.
     pub fn take_controller(&mut self, id: ControllerId) -> Option<Controller> {
         match id {
-            ControllerId::Master => {
+            ControllerId::Primary => {
                 if self.master_controller {
                     return None;
                 }

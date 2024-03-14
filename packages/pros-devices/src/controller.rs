@@ -80,14 +80,17 @@ pub struct Joystick {
 }
 
 impl Joystick {
+    /// Gets the value of the joystick position on its x-axis from [-1, 1].
     pub fn x(&self) -> Result<f32, ControllerError> {
         Ok(self.x_raw()? as f32 / 127.0)
     }
 
+    /// Gets the value of the joystick position on its y-axis from [-1, 1].
     pub fn y(&self) -> Result<f32, ControllerError> {
         Ok(self.y_raw()? as f32 / 127.0)
     }
 
+    /// Gets the raw value of the joystick position on its x-axis from [-128, 127].
     pub fn x_raw(&self) -> Result<i8, ControllerError> {
         if competition::mode() != CompetitionMode::Opcontrol {
             return Err(ControllerError::CompetitionControl);
@@ -98,6 +101,7 @@ impl Joystick {
         }) as _)
     }
 
+    /// Gets the raw value of the joystick position on its y-axis from [-128, 127].
     pub fn y_raw(&self) -> Result<i8, ControllerError> {
         if competition::mode() != CompetitionMode::Opcontrol {
             return Err(ControllerError::CompetitionControl);
@@ -115,32 +119,56 @@ impl Joystick {
 pub struct Controller {
     id: ControllerId,
 
+    /// Controller Screen
     pub screen: ControllerScreen,
 
+    /// Left Joystick
     pub left_stick: Joystick,
+    /// Right Joystick
     pub right_stick: Joystick,
 
+    /// Button A
     pub button_a: Button,
+    /// Button B
     pub button_b: Button,
+    /// Button X
     pub button_x: Button,
+    /// Button Y
     pub button_y: Button,
+
+    /// Button Up
     pub button_up: Button,
+    /// Button Down
     pub button_down: Button,
+    /// Button Left
     pub button_left: Button,
+    /// Button Right
     pub button_right: Button,
 
+    /// Top Left Trigger
     pub left_trigger_1: Button,
+    /// Bottom Left Trigger
     pub left_trigger_2: Button,
+    /// Top Right Trigger
     pub right_trigger_1: Button,
+    /// Bottom Right Trigger
     pub right_trigger_2: Button,
 }
 
+/// Controller LCD Console
 #[derive(Debug, Eq, PartialEq)]
 pub struct ControllerScreen {
     id: ControllerId,
 }
 
 impl ControllerScreen {
+    /// Maximum number of characters that can be drawn to a text line.
+    pub const MAX_LINE_LENGTH: usize = 14;
+
+    /// Number of available text lines on the controller before clearing the screen.
+    pub const MAX_LINES: usize = 2;
+
+    /// Clear the contents of a specific text line.
     pub fn clear_line(&mut self, line: u8) -> Result<(), ControllerError> {
         bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_clear_line(self.id as _, line)
@@ -149,6 +177,7 @@ impl ControllerScreen {
         Ok(())
     }
 
+    /// Clear the whole screen.
     pub fn clear_screen(&mut self) -> Result<(), ControllerError> {
         bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_clear(self.id as _)
@@ -157,6 +186,7 @@ impl ControllerScreen {
         Ok(())
     }
 
+    /// Set the text contents at a specific row/column offset.
     pub fn set_text(&mut self, text: &str, line: u8, col: u8) -> Result<(), ControllerError> {
         bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_set_text(
@@ -173,17 +203,26 @@ impl ControllerScreen {
     }
 }
 
+/// Represents an identifier for one of the two possible controllers
+/// connected to the V5 brain.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub enum ControllerId {
-    Master = E_CONTROLLER_MASTER,
+    /// Primary ("Master") Controller
+    Primary = E_CONTROLLER_MASTER,
+
+    /// Partner Controller
     Partner = E_CONTROLLER_PARTNER,
 }
 
 impl Controller {
-    pub const MAX_LINE_LENGTH: usize = 14;
-    pub const MAX_LINES: usize = 2;
-
+    /// Create a new controller.
+    ///
+    /// # Safety
+    ///
+    /// Creating new `Controller`s is inherently unsafe due to the possibility of constructing
+    /// more than one screen at once allowing multiple mutable references to the same
+    /// hardware device. Prefer using [`Peripherals`](crate::peripherals::Peripherals) to register devices if possible.
     pub const unsafe fn new(id: ControllerId) -> Self {
         Self {
             id,
@@ -249,24 +288,32 @@ impl Controller {
         }
     }
 
+    /// Returns `true` if the controller is connected to the brain.
     pub fn is_connected(&self) -> Result<bool, ControllerError> {
         Ok(bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_is_connected(self.id as _)
         }) != 0)
     }
 
+    /// Gets the controller's battery capacity.
     pub fn battery_capacity(&self) -> Result<i32, ControllerError> {
         Ok(bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_get_battery_capacity(self.id as _)
         }))
     }
 
+    /// Gets the controller's battery level.
     pub fn battery_level(&self) -> Result<i32, ControllerError> {
         Ok(bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_get_battery_level(self.id as _)
         }))
     }
 
+    /// Send a rumble pattern to the controller's vibration motor.
+    ///
+    /// This function takes a string consisting of the characters '.', '-', and ' ', where
+    /// dots are short rumbles, dashes are long rumbles, and spaces are pauses. Maximum
+    /// supported length is 8 characters.
     pub fn rumble(&mut self, pattern: &str) -> Result<(), ControllerError> {
         bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_rumble(
