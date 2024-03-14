@@ -32,6 +32,8 @@ Before releasing:
   - Added support for internal motor PID tuning. Feature gated behind `dangerous_motor_tuning`, as this can cause hardware damage and is not recommended.
   - Added various constants for convenience around `Motor` and `Gearset`.
 - Added `Controller` API to the `pros::prelude` module. (#108)
+- Added a new future to `pros-async` (`WaitUntilFuture`).
+- Added `Controller::wait_until_button_pressed` function and its respective future type.
 
 ### Fixed
 
@@ -52,6 +54,7 @@ Before releasing:
 - Status structs containing device bits now use the `bitflags!` crate. (**Breaking Change**) (#66)
 - Renamed `InertialSensor::calibrating` to `InertialSensor::calibrating` (**Breaking CHange**) (#66)
 - AdiEncoder now returns `Position` rather than just degrees (**Breaking Change**) (#106).
+- Refactored `pros-async` with a new futures module.
 
 ### Removed
 

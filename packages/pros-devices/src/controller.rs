@@ -4,6 +4,7 @@
 //! State of a controller can be checked by calling [`Controller::state`] which will return a struct with all of the buttons' and joysticks' state.
 
 use alloc::{ffi::CString, vec::Vec};
+use core::future::Future;
 
 use pros_core::{bail_on, map_errno};
 use pros_sys::{controller_id_e_t, PROS_ERR};
@@ -149,6 +150,28 @@ pub enum JoystickAxis {
     RightX = pros_sys::E_CONTROLLER_ANALOG_RIGHT_X,
     /// Down (-1.0) and up (1.0) y axis of the right joystick
     RightY = pros_sys::E_CONTROLLER_ANALOG_RIGHT_Y,
+}
+
+/// A future that completes once the given button is pressed.
+pub struct WaitUntilButtonPressedFuture<'a> {
+    controller: &'a Controller,
+    button: ControllerButton,
+}
+impl<'a> Future for WaitUntilButtonPressedFuture<'a> {
+    type Output = ();
+
+    fn poll(
+        self: core::pin::Pin<&mut Self>,
+        cx: &mut core::task::Context<'_>,
+    ) -> core::task::Poll<Self::Output> {
+        let pressed = self.controller.button(self.button).unwrap_or(false);
+        if pressed {
+            core::task::Poll::Ready(())
+        } else {
+            cx.waker().wake_by_ref();
+            core::task::Poll::Pending
+        }
+    }
 }
 
 /// The basic type for a controller.
@@ -321,6 +344,17 @@ impl Controller {
         Ok(bail_on!(PROS_ERR, unsafe {
             pros_sys::controller_get_digital(self.id(), button as pros_sys::controller_digital_e_t)
         }) == 1)
+    }
+
+    /// Returns a future that completes once the given button is pressed.
+    pub fn wait_until_button_pressed<'a>(
+        &'a self,
+        button: ControllerButton,
+    ) -> WaitUntilButtonPressedFuture<'a> {
+        WaitUntilButtonPressedFuture {
+            controller: self,
+            button,
+        }
     }
 
     /// Gets the state of a specific joystick axis on the controller.
