@@ -1,12 +1,11 @@
 [package]
-name = "vex-devices"
+name = "vex-panic"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-description = "High level device for vex-rs"
-keywords = ["PROS", "Robotics", "bindings", "vex", "v5"]
+description = "Panic handler for vex-rs"
+keywords = ["PROS", "Robotics", "vex", "v5"]
 categories = [
-    "api-bindings",
     "no-std",
     "science::robotics",
 ]
@@ -21,17 +20,13 @@ authors = [
 
 [dependencies]
 vex-core = { version = "0.1.0", path = "../vex-core" }
-pros-sys = { path = "../pros-sys", version = "0.7.0", features = ["xapi"] }
-vex-sdk = { version = "0.1.0" }
-snafu = { version = "0.8.0", default-features = false, features = [
-    "rust_1_61",
-    "unstable-core-error",
-] }
-no_std_io = { version = "0.6.0", features = ["alloc"] }
-bitflags = "2.4.2"
+vex-devices = { version = "0.1.0", path = "../vex-devices", optional = true }
+pros-sys = { version = "0.7.0", path = "../pros-sys" }
+
+[features]
+default = ["display_panics"]
+
+display_panics = ["dep:vex-devices"]
 
 [lints]
 workspace = true
-
-[features]
-dangerous_motor_tuning = []

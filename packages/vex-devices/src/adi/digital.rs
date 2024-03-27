@@ -1,6 +1,6 @@
 //! Digital input and output ADI devices
 
-use pros_core::bail_on;
+use vex_core::bail_on;
 use pros_sys::PROS_ERR;
 
 use super::{AdiDevice, AdiDeviceType, AdiError, AdiPort};

@@ -1,0 +1,44 @@
+[package]
+name = "vex-v5"
+version = "0.8.0"
+edition = "2021"
+description = "Opinionated Rust bindings for the VEX V5 platform."
+keywords = ["PROS", "Robotics", "bindings", "vex", "v5"]
+categories = ["os", "api-bindings", "no-std", "science::robotics"]
+license = "MIT"
+repository = "https://github.com/pros-rs/vex-rs"
+readme = "../../README.md"
+authors = [
+    "pros-rs",
+    "Gavin Niederman <gavinniederman@gmail.com>",
+    "doinkythederp <doinkythederp@icloud.com>",
+]
+rust-version = "1.75.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+vex-sync = { version = "0.1.0", path = "../vex-sync", optional = true }
+vex-async = { version = "0.1.0", path = "../vex-async", optional = true }
+vex-devices = { version = "0.1.0", path = "../vex-devices", optional = true }
+vex-panic = { version = "0.1.0", path = "../vex-panic", optional = true }
+vex-core = { version = "0.1.0", path = "../vex-core", optional = true }
+vex-math = { version = "0.1.0", path = "../vex-math", optional = true }
+pros-sys = { version = "0.7.0", path = "../pros-sys" }
+
+[features]
+default = ["async", "devices", "panic", "display_panics", "core", "math"]
+
+core = ["dep:vex-core"]
+
+async = ["dep:vex-async"]
+sync = ["dep:vex-sync"]
+
+devices = ["dep:vex-devices"]
+
+math = ["dep:vex-math"]
+
+panic = ["dep:vex-panic"]
+display_panics = ["vex-panic/display_panics"]
+
+dangerous-motor-tuning = ["vex-devices/dangerous_motor_tuning"]

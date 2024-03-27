@@ -1,6 +1,6 @@
 //! ADI Pulse-width modulation (PWM).
 
-use pros_core::bail_on;
+use vex_core::bail_on;
 use pros_sys::PROS_ERR;
 
 use super::{AdiDevice, AdiDeviceType, AdiError, AdiPort};

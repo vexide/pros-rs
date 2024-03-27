@@ -5,7 +5,7 @@
 
 use alloc::{ffi::CString, vec::Vec};
 
-use pros_core::{bail_on, map_errno};
+use vex_core::{bail_on, map_errno};
 use pros_sys::{controller_id_e_t, PROS_ERR};
 use snafu::Snafu;
 

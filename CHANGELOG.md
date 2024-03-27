@@ -105,12 +105,12 @@ Before releasing:
 - Renamed IMU_RESET_TIMEOUT to `InertialSensor::CALIBRATION_TIMEOUT` (**Breaking Change**) (#98).
 - Repurposed the `pros` crate as a metapackage without any code of its own. (**Breaking Change**) (#86)
 - Split the pros-rs into several small subcrates. (**Breaking Change**) (#86)
-  - `pros-async` with the async executor and robot trait.
+  - `vex-async` with the async executor and robot trait.
   - `vex-devices` for device bindings.
-  - `pros-sync` for the sync robot trait.
-  - `pros-core` with basic abstractions over `pros-sys` needed to compile a program to the brain.
-  - `pros-math` with commonly used controllers and other mathematical models.
-  - `pros-panic` for the panic handler implementation.
+  - `vex-sync` for the sync robot trait.
+  - `vex-core` with basic abstractions over `pros-sys` needed to compile a program to the brain.
+  - `vex-math` with commonly used controllers and other mathematical models.
+  - `vex-panic` for the panic handler implementation.
 
 ### Removed
 

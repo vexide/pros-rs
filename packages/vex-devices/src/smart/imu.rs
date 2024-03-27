@@ -7,7 +7,7 @@ use core::{
 };
 
 use bitflags::bitflags;
-use pros_core::{error::PortError, time::Instant};
+use vex_core::{error::PortError, time::Instant};
 use snafu::Snafu;
 use vex_sdk::{
     vexDeviceGetByIndex, vexDeviceImuAttitudeGet, vexDeviceImuDataRateSet, vexDeviceImuDegreesGet,

@@ -1,0 +1,25 @@
+[package]
+name = "vex-math"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Commonly used mathematical formulas for vex-rs"
+keywords = ["PROS", "Robotics", "vex", "v5"]
+categories = [
+    "no-std",
+    "science::robotics",
+    "Mathematics",
+]
+repository = "https://github.com/pros-rs/vex-rs"
+authors = [
+    "pros-rs",
+    "Gavin Niederman <gavinniederman@gmail.com>",
+    "doinkythederp <doinkythederp@icloud.com>",
+]
+
+[dependencies]
+num = { version = "0.4.1", default-features = false }
+vex-core = { version = "0.1.0", path = "../vex-core" }
+
+[lints]
+workspace = true

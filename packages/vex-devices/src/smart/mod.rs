@@ -37,7 +37,7 @@ pub use imu::InertialSensor;
 pub use link::{Link, RxLink, TxLink};
 pub use motor::Motor;
 pub use optical::OpticalSensor;
-use pros_core::error::PortError;
+use vex_core::error::PortError;
 pub use rotation::RotationSensor;
 use vex_sdk::{vexDeviceGetByIndex, vexDeviceGetTimestamp, V5_DeviceT, V5_DeviceType};
 pub use vision::VisionSensor;
@@ -295,7 +295,7 @@ impl From<SmartDeviceType> for V5_DeviceType {
 
 /// Represents a timestamp on a smart device's internal clock. This type offers
 /// no guarantees that the device's clock is in sync with the internal clock of
-/// the brain, and thus cannot be safely compared with [`pros_core::time::Instant`]s.
+/// the brain, and thus cannot be safely compared with [`vex_core::time::Instant`]s.
 ///
 /// There is additionally no guarantee that this is in sync with other smart devices,
 /// or even the same device if a disconnect occurred causing the clock to reset. As such,

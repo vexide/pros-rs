@@ -7,7 +7,7 @@ use alloc::{ffi::CString, string::String};
 use core::ffi::CStr;
 
 use no_std_io::io;
-use pros_core::{
+use vex_core::{
     bail_errno, bail_on,
     error::{FromErrno, PortError},
     map_errno,
@@ -152,7 +152,7 @@ impl TxLink {
 
         match unsafe { link_transmit(self.port.index(), buf.as_ptr().cast(), buf.len() as _) } {
             PROS_ERR_U32 => {
-                let errno = pros_core::error::take_errno();
+                let errno = vex_core::error::take_errno();
                 Err(FromErrno::from_errno(errno)
                     .unwrap_or_else(|| panic!("Unknown errno code {errno}")))
             }
