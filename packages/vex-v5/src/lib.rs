@@ -52,19 +52,19 @@
 //! ```
 //!
 //! You may have noticed the `#[derive(Default)]` attribute on these Robot structs.
-//! If you want to learn why, look at the docs for [`pros_async::async_robot`] or [`pros_sync::sync_robot`].
+//! If you want to learn why, look at the docs for [`vex_async::async_robot`] or [`pros_sync::sync_robot`].
 #![no_std]
 
 #[cfg(feature = "async")]
-pub use pros_async as async_runtime;
+pub use vex_async as async_runtime;
 #[cfg(feature = "core")]
 pub use vex_core as core;
 #[cfg(feature = "math")]
-pub use pros_math as math;
+pub use vex_math as math;
 #[cfg(feature = "panic")]
-pub use pros_panic as panic;
+pub use vex_panic as panic;
 #[cfg(feature = "sync")]
-pub use pros_sync as sync;
+pub use vex_sync as sync;
 pub use pros_sys as sys;
 #[cfg(feature = "devices")]
 pub use vex_devices as devices;
@@ -73,7 +73,7 @@ pub use vex_devices as devices;
 /// This module is meant to be glob imported.
 pub mod prelude {
     #[cfg(feature = "async")]
-    pub use pros_async::{async_robot, block_on, sleep, spawn, AsyncRobot};
+    pub use vex_async::{async_robot, block_on, sleep, spawn, AsyncRobot};
     #[cfg(feature = "core")]
     pub use vex_core::{
         dbg, eprint, eprintln,
@@ -83,7 +83,7 @@ pub mod prelude {
         task::delay,
     };
     #[cfg(feature = "math")]
-    pub use pros_math::{feedforward::MotorFeedforwardController, pid::PidController};
+    pub use vex_math::{feedforward::MotorFeedforwardController, pid::PidController};
     #[cfg(feature = "sync")]
     pub use pros_sync::{sync_robot, SyncRobot};
     #[cfg(feature = "devices")]
