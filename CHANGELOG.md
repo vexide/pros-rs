@@ -22,6 +22,16 @@ Before releasing:
 ## [Unreleased]
 
 ### Added
+
+### Fixed
+
+### Changed
+
+### Removed
+
+## [0.9.0]
+
+### Added
 - New Motor API (**Breaking Change**) (#66)
   - Added `MotorControl` enum for controlling motor targets (#66).
   - Added support for onboard velocity and position control in motors (#66).
@@ -223,9 +233,10 @@ Before releasing:
 
 ### Removed
 
-[unreleased]: https://github.com/pros-rs/pros-rs/compare/v0.8.0...HEAD
+[unreleased]: https://github.com/pros-rs/pros-rs/compare/v0.9.0...HEAD
 [0.4.0]: https://github.com/pros-rs/pros-rs/releases/tag/v0.4.0
 [0.5.0]: https://github.com/pros-rs/pros-rs/compare/v0.4.0...v0.5.0
 [0.6.0]: https://github.com/pros-rs/pros-rs/compare/v0.5.0...v0.6.0
 [0.7.0]: https://github.com/pros-rs/pros-rs/compare/v0.6.0...v0.7.0
 [0.8.0]: https://github.com/pros-rs/pros-rs/compare/v0.7.0...v0.8.0
+[0.8.0]: https://github.com/pros-rs/pros-rs/compare/v0.8.0...v0.9.0
