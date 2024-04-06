@@ -22,7 +22,7 @@ pros-sync = { version = "0.2.0", path = "../pros-sync", optional = true }
 pros-async = { version = "0.2.0", path = "../pros-async", optional = true }
 pros-devices = { version = "0.2.0", path = "../pros-devices", optional = true }
 pros-panic = { version = "0.1.1", path = "../pros-panic", optional = true }
-pros-core = { version = "0.1.0", path = "../pros-core", optional = true }
+pros-core = { version = "0.1.1", path = "../pros-core", optional = true }
 pros-math = { version = "0.1.0", path = "../pros-math", optional = true }
 pros-sys = { version = "0.8.0", path = "../pros-sys" }
 
