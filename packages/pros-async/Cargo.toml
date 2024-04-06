@@ -1,6 +1,6 @@
 [package]
 name = "pros-async"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 description = "A simple async executor for pros-rs"
@@ -23,7 +23,7 @@ authors = [
 async-task = { version = "4.5.0", default-features = false }
 pros-core = { version = "0.1.0", path = "../pros-core" }
 waker-fn = "1.1.1"
-pros-sys = { version = "0.7.0", path = "../pros-sys" }
+pros-sys = { version = "0.8.0", path = "../pros-sys" }
 
 [lints]
 workspace = true

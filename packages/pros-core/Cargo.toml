@@ -1,6 +1,6 @@
 [package]
 name = "pros-core"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
 description = "Core functionality for pros-rs"
@@ -20,7 +20,7 @@ authors = [
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pros-sys = { version = "0.7.0", path = "../pros-sys" }
+pros-sys = { version = "0.8.0", path = "../pros-sys" }
 no_std_io = { version = "0.6.0", features = ["alloc"] }
 snafu = { version = "0.8.0", default-features = false, features = [
     "rust_1_61",
