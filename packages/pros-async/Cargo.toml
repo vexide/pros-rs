@@ -4,11 +4,11 @@ version = "0.2.1"
 edition = "2021"
 license = "MIT"
 description = "A simple async executor for pros-rs"
-keywords = ["PROS", "Robotics", "bindings", "async", "vex", "v5"]
+keywords = ["PROS", "Robotics", "bindings", "vex", "v5"]
 categories = [
     "no-std",
     "science::robotics",
-    "Asynchronous"
+    "asynchronous"
 ]
 repository = "https://github.com/gavin-niederman/pros-rs"
 authors = [

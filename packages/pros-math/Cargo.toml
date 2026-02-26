@@ -8,7 +8,7 @@ keywords = ["PROS", "Robotics", "vex", "v5"]
 categories = [
     "no-std",
     "science::robotics",
-    "Mathematics",
+    "mathematics",
 ]
 repository = "https://github.com/gavin-niederman/pros-rs"
 authors = [
