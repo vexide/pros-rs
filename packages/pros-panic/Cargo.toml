@@ -1,6 +1,6 @@
 [package]
 name = "pros-panic"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 license = "MIT"
 description = "Panic handler for pros-rs"
@@ -30,3 +30,6 @@ display_panics = ["dep:pros-devices"]
 
 [lints]
 workspace = true
+
+[badges]
+maintenance.status = "deprecated"

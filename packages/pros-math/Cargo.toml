@@ -1,6 +1,6 @@
 [package]
 name = "pros-math"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
 description = "Commonly used mathematical formulas for pros-rs"
@@ -23,3 +23,6 @@ pros-core = { version = "0.1.0", path = "../pros-core" }
 
 [lints]
 workspace = true
+
+[badges]
+maintenance.status = "deprecated"

@@ -1,6 +1,6 @@
 [package]
 name = "pros-async"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 license = "MIT"
 description = "A simple async executor for pros-rs"
@@ -27,3 +27,6 @@ pros-sys = { version = "0.8.0", path = "../pros-sys" }
 
 [lints]
 workspace = true
+
+[badges]
+maintenance.status = "deprecated"

@@ -2,9 +2,12 @@
 
 Opinionated Rust bindings for the [PROS](https://github.com/purduesigbots/pros) library and kernel.
 
-> [!IMPORTANT]
->
-> This project is not currently in development. If this looks interesting to you, check out [`vexide`](https://github.com/vexide/vexide) instead!
+![Maintained: no](https://img.shields.io/maintenance/no/2024)
+
+> [!important]
+> pros-rs is deprecated and unmaintained; new projects should instead use
+> [`vexide`](https://crates.io/crates/vexide), a similar library with features like differential
+> uploading and `std` support.
 
 ## Usage
 
@@ -34,7 +37,7 @@ There is a ``.envrc`` file included for Nix + Direnv users.
 
 #### Without Nix
 
-Install arm-none-eabi-gcc and pros-cli from your package manager of choice. 
+Install arm-none-eabi-gcc and pros-cli from your package manager of choice.
 Cargo pros can be installed with ``cargo install cargo-pros``.
 
 ### MacOS
@@ -57,7 +60,7 @@ And you are done! Compile the project with `cargo build`.
 To build projects in this repository for WebAssembly, run ``cargo pros build -s``
 This will automatically pass all of the correct arguments to cargo.
 
-If for some reason you want to do it manually, this is the command: 
+If for some reason you want to do it manually, this is the command:
 `cargo build --target wasm32-unknown-unknown -Zbuild-std=std,panic_abort`.
 
 The extra build-std argument is neccesary because this repository's `.cargo/config.toml` enables build-std but only for core, alloc, and compiler_builtins. WebAssembly does come with `std` but there is [currently](https://github.com/rust-lang/cargo/issues/8733) no way to conditionally enable build-std.

@@ -2,6 +2,13 @@
 
 Functionality for accessing hardware connected to the V5 brain.
 
+![Maintained: no](https://img.shields.io/maintenance/no/2024)
+
+> [!important]
+> pros-rs is deprecated and unmaintained; new projects should instead use
+> [`vexide`](https://crates.io/crates/vexide), a similar library with features like differential
+> uploading and `std` support.
+
 ## Overview
 
 The V5 brain features 21 RJ9 4p4c connector ports (known as "Smart ports") for communicating with newer V5 peripherals, as well as six 3-wire ports with log-to-digital conversion capability for compatibility with legacy Cortex devices. This module provides access to both smart devices and ADI devices.

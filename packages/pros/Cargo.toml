@@ -1,6 +1,6 @@
 [package]
 name = "pros"
-version = "0.9.0"
+version = "0.9.1"
 edition = "2021"
 description = "Rust bindings for PROS"
 keywords = ["PROS", "Robotics", "bindings", "vex", "v5"]
@@ -42,3 +42,6 @@ panic = ["dep:pros-panic"]
 display_panics = ["pros-panic/display_panics"]
 
 dangerous-motor-tuning = ["pros-devices/dangerous_motor_tuning"]
+
+[badges]
+maintenance.status = "deprecated"
